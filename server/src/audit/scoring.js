@@ -13,6 +13,8 @@ export const CATEGORIES = {
   international: 'Międzynarodowe',
   social: 'Social / Open Graph',
   url: 'Struktura URL',
+  geo: 'GEO (AI / silniki generatywne)',
+  local: 'Local / Geo SEO',
 };
 
 export function scoreAudit(pages, siteIssues = []) {

@@ -58,16 +58,39 @@ export function extractPageData(html, baseUrl) {
 
   // --- Dane strukturalne (JSON-LD) ---
   const jsonLd = [];
+  const ldFlags = {
+    author: false, datePublished: false, dateModified: false,
+    organization: false, localBusiness: false, faqPage: false,
+    breadcrumb: false, address: false, telephone: false, sameAs: [],
+  };
+  const LOCAL_TYPES = /LocalBusiness|Restaurant|Store|Dentist|Physician|Hotel|ProfessionalService|Plumber|AutoRepair|RealEstateAgent/i;
   $('script[type="application/ld+json"]').each((_, el) => {
     const raw = $(el).contents().text();
     try {
       const parsed = JSON.parse(raw);
       const types = [];
       const collectTypes = (obj) => {
-        if (!obj) return;
+        if (!obj || typeof obj !== 'object') return;
         if (Array.isArray(obj)) return obj.forEach(collectTypes);
-        if (obj['@type']) types.push(...[].concat(obj['@type']));
+        if (obj['@type']) {
+          const t = [].concat(obj['@type']);
+          types.push(...t);
+          const ts = t.join(' ');
+          if (/Organization/i.test(ts)) ldFlags.organization = true;
+          if (LOCAL_TYPES.test(ts)) ldFlags.localBusiness = true;
+          if (/FAQPage/i.test(ts)) ldFlags.faqPage = true;
+          if (/BreadcrumbList/i.test(ts)) ldFlags.breadcrumb = true;
+        }
+        if (obj.author) ldFlags.author = true;
+        if (obj.datePublished) ldFlags.datePublished = true;
+        if (obj.dateModified) ldFlags.dateModified = true;
+        if (obj.address) ldFlags.address = true;
+        if (obj.telephone) ldFlags.telephone = true;
+        if (obj.sameAs) ldFlags.sameAs.push(...[].concat(obj.sameAs));
         if (obj['@graph']) collectTypes(obj['@graph']);
+        for (const k in obj) {
+          if (k !== '@graph' && obj[k] && typeof obj[k] === 'object') collectTypes(obj[k]);
+        }
       };
       collectTypes(parsed);
       jsonLd.push({ valid: true, types });
@@ -124,9 +147,48 @@ export function extractPageData(html, baseUrl) {
   const manifest = $('link[rel="manifest" i]').attr('href') || null;
   const ampHref = $('link[rel="amphtml" i]').attr('href') || null;
 
+  // --- GEO (Generative Engine Optimization) / struktura dla AI ---
+  const semantic = {
+    article: $('article').length,
+    section: $('section').length,
+    main: $('main').length,
+    nav: $('nav').length,
+    header: $('header').length,
+    footer: $('footer').length,
+    aside: $('aside').length,
+  };
+  const listCount = $('ul, ol').length;
+  const tableCount = $('table').length;
+  const paragraphLengths = $('p').map((_, el) => $(el).text().trim().length).get();
+  const longParagraphs = paragraphLengths.filter((n) => n > 900).length; // ~140 słów
+  const allHeadingTexts = [...headings.h2, ...headings.h3, ...headings.h4];
+  const questionHeadings = allHeadingTexts.filter((t) => /\?\s*$/.test(t)).length;
+
+  // E-E-A-T / autorstwo i świeżość
+  const metaAuthor = getMeta('author');
+  const relAuthor = $('[rel="author" i]').first().text().trim() || null;
+  const articlePublished = getMeta('article:published_time');
+  const articleModified = getMeta('article:modified_time');
+  const hasAuthor = !!(metaAuthor || relAuthor || ldFlags.author);
+  const hasPublishDate = !!(articlePublished || ldFlags.datePublished);
+  const hasModifiedDate = !!(articleModified || ldFlags.dateModified);
+
+  // --- Local / Geo SEO ---
+  const geoRegion = getMeta('geo.region');
+  const geoPlacename = getMeta('geo.placename');
+  const geoPosition = getMeta('geo.position');
+  const icbm = getMeta('icbm');
+  const hasGeoMeta = !!(geoRegion || geoPlacename || geoPosition || icbm);
+  const telLinks = $('a[href^="tel:"]').length;
+  const hasMapEmbed = $('iframe[src*="google.com/maps" i], iframe[src*="maps.google" i], iframe[src*="openstreetmap" i]').length > 0;
+
   // --- Treść / tekst ---
   $('script, style, noscript, template').remove();
   const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
+  // Wzorce adresu (PL: kod 00-000, oraz ogólne wzmianki o ulicy)
+  const hasPostalCode = /\b\d{2}-\d{3}\b/.test(bodyText) || /\b\d{5}\b/.test(bodyText);
+  const hasStreetMention = /\b(ul\.|ulica|al\.|aleja|plac|street|st\.|ave\.?|avenue)\b/i.test(bodyText);
+  const hasPhoneInText = telLinks > 0 || /(\+?\d[\d\s().-]{7,}\d)/.test(bodyText);
   const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
   const textRatio = html.length > 0 ? bodyText.length / html.length : 0;
   // Próbka treści do dopasowania słów kluczowych (ograniczona, by nie rozdmuchać payloadu).
@@ -173,5 +235,24 @@ export function extractPageData(html, baseUrl) {
     htmlSize: html.length,
     headingsText,
     bodySample,
+    // GEO / AI
+    ldFlags,
+    semantic,
+    listCount,
+    tableCount,
+    longParagraphs,
+    paragraphCount: paragraphLengths.length,
+    questionHeadings,
+    hasAuthor,
+    hasPublishDate,
+    hasModifiedDate,
+    // Local / Geo
+    hasGeoMeta,
+    geoMeta: { geoRegion, geoPlacename, geoPosition, icbm },
+    telLinks,
+    hasMapEmbed,
+    hasPostalCode,
+    hasStreetMention,
+    hasPhoneInText,
   };
 }

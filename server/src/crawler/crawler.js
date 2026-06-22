@@ -80,6 +80,10 @@ export async function runAudit(opts, emit = () => {}, controller = new CrawlCont
   const robotsData = await fetchRobots(origin);
   robots = robotsData.exists ? robotsData : null;
 
+  // llms.txt (Generative Engine Optimization — wskazuje LLM-om kluczowe treści)
+  const llmsRes = await fetchUrl(new URL('/llms.txt', origin).href, { timeout: 8000 }).catch(() => null);
+  const llmsTxt = { exists: !!(llmsRes && llmsRes.ok && llmsRes.body && llmsRes.body.length > 10), url: new URL('/llms.txt', origin).href };
+
   // sitemap
   let sitemapUrls = [];
   let sitemaps = [];
@@ -171,6 +175,28 @@ export async function runAudit(opts, emit = () => {}, controller = new CrawlCont
   // Analiza całej witryny
   emit({ type: 'status', phase: 'analyze', message: 'Analiza całej witryny…' });
   const site = analyzeSite(pages, { startUrl: start });
+
+  // GEO na poziomie witryny: llms.txt + spójność encji (sameAs/Organization)
+  if (!llmsTxt.exists) {
+    site.issues.push({
+      severity: 'notice', category: 'geo', title: 'Brak pliku llms.txt',
+      detail: 'Brak /llms.txt — pliku wskazującego silnikom AI kluczowe treści witryny (wschodzący standard GEO).',
+    });
+  }
+  const hasOrgEntity = pages.some((p) => p.data && p.data.ldFlags && (p.data.ldFlags.organization || p.data.ldFlags.localBusiness));
+  const hasSameAs = pages.some((p) => p.data && p.data.ldFlags && p.data.ldFlags.sameAs && p.data.ldFlags.sameAs.length > 0);
+  if (!hasOrgEntity) {
+    site.issues.push({
+      severity: 'notice', category: 'geo', title: 'Brak encji Organization w danych strukturalnych',
+      detail: 'Żadna strona nie deklaruje schema Organization/LocalBusiness — utrudnia AI rozpoznanie marki jako encji.',
+    });
+  } else if (!hasSameAs) {
+    site.issues.push({
+      severity: 'notice', category: 'geo', title: 'Brak sameAs w encji Organization',
+      detail: 'Dodaj sameAs (profile social, Wikipedia/Wikidata) do schema Organization — wzmacnia rozpoznanie encji przez AI.',
+    });
+  }
+
   const summary = scoreAudit(pages, site.issues);
 
   const result = {
@@ -182,6 +208,7 @@ export async function runAudit(opts, emit = () => {}, controller = new CrawlCont
       cancelled: controller.cancelled,
     },
     robots: { exists: robotsData.exists, url: robotsData.url, sitemaps: robotsData.sitemaps || [], crawlDelay: null },
+    llmsTxt,
     sitemaps,
     summary,
     site: site.stats,
@@ -314,6 +341,25 @@ function serializePage(p) {
           hreflangCount: d.hreflang.length,
           headingsText: d.headingsText,
           bodySample: d.bodySample,
+          geo: {
+            semanticHtml: (d.semantic.article + d.semantic.main + d.semantic.section) > 0,
+            hasAuthor: d.hasAuthor,
+            hasPublishDate: d.hasPublishDate,
+            hasModifiedDate: d.hasModifiedDate,
+            questionHeadings: d.questionHeadings,
+            lists: d.listCount,
+            tables: d.tableCount,
+            faqSchema: d.ldFlags.faqPage,
+          },
+          local: {
+            organization: d.ldFlags.organization,
+            localBusiness: d.ldFlags.localBusiness,
+            address: d.ldFlags.address || d.hasPostalCode || d.hasStreetMention,
+            phone: d.hasPhoneInText,
+            geoMeta: d.hasGeoMeta,
+            map: d.hasMapEmbed,
+            sameAs: d.ldFlags.sameAs.length,
+          },
         }
       : null,
   };

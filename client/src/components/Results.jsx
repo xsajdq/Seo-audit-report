@@ -46,6 +46,7 @@ export default function Results({ result, resultId, onReset }) {
             <li><span>Strony osierocone</span><b className={result.site.orphanPages ? 'warn' : ''}>{result.site.orphanPages}</b></li>
             <li><span>robots.txt</span><b>{result.robots.exists ? '✓' : '✗'}</b></li>
             <li><span>Sitemap</span><b>{result.sitemaps.length ? '✓' : '✗'}</b></li>
+            <li><span>llms.txt (GEO/AI)</span><b className={result.llmsTxt?.exists ? '' : 'warn'}>{result.llmsTxt?.exists ? '✓' : '✗'}</b></li>
           </ul>
         </div>
       </div>

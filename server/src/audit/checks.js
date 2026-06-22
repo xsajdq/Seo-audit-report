@@ -192,5 +192,61 @@ export function runChecks(page) {
     }
   } catch { /* ignore */ }
 
+  // ===== GEO — Generative Engine Optimization (widoczność w silnikach AI) =====
+  // Treść o realnej objętości — oceniamy GEO tylko dla stron treściowych.
+  if (data.wordCount >= 250 && !noindex) {
+    const sem = data.semantic || {};
+    const hasSemantic = (sem.article + sem.main + sem.section) > 0;
+    if (!hasSemantic) {
+      add('notice', 'geo', 'Brak semantycznego HTML (article/main/section)', 'Silniki AI lepiej ekstrahują treść z elementów semantycznych zamiast samych <div>.');
+    }
+    if (!data.hasAuthor) {
+      add('warning', 'geo', 'Brak sygnałów autorstwa (E-E-A-T)', 'Brak autora (meta author / rel=author / JSON-LD author) — AI preferuje treści z jasnym autorstwem.');
+    }
+    if (!data.hasModifiedDate && !data.hasPublishDate) {
+      add('warning', 'geo', 'Brak daty publikacji/aktualizacji', 'Brak datePublished/dateModified — silniki AI faworyzują treści o znanej świeżości.');
+    }
+    if (data.questionHeadings === 0 && !data.ldFlags?.faqPage) {
+      add('notice', 'geo', 'Brak nagłówków w formie pytań / FAQ', 'Nagłówki-pytania i sekcje FAQ ułatwiają cytowanie przez AI (AI Overviews, ChatGPT, Perplexity).');
+    }
+    if (data.listCount === 0 && data.tableCount === 0) {
+      add('notice', 'geo', 'Brak list i tabel', 'Listy i tabele to format łatwo ekstrahowany i cytowany przez silniki generatywne.');
+    }
+    if (data.longParagraphs >= 3) {
+      add('notice', 'geo', 'Długie akapity (trudne do cytowania)', `${data.longParagraphs} akapitów >140 słów — krótsze, zwięzłe odpowiedzi są chętniej cytowane przez AI.`);
+    }
+    const richTypes = (data.jsonLd || []).flatMap((j) => j.types).join(' ');
+    if (!/Article|FAQ|HowTo|Product|Recipe|Event/i.test(richTypes)) {
+      add('notice', 'geo', 'Brak treściowego schema (Article/FAQ/HowTo…)', 'Dane strukturalne typu treściowego pomagają AI zrozumieć i zacytować zawartość.');
+    }
+  }
+
+  // ===== LOCAL / GEO — sygnały lokalne i geograficzne =====
+  const ld = data.ldFlags || {};
+  // Sygnały sugerujące biznes lokalny (strona kontaktowa / dane firmy)
+  const looksLocal = ld.localBusiness || ld.address || data.hasMapEmbed || data.telLinks > 0 ||
+    /kontakt|contact|lokalizacj|adres|address|dojazd|gdzie-jeste/i.test(response.finalUrl);
+
+  if (ld.localBusiness && !ld.address) {
+    add('warning', 'local', 'LocalBusiness bez adresu', 'Schema LocalBusiness nie zawiera PostalAddress — kluczowe dla lokalnego SEO i Map Google.');
+  }
+  if (looksLocal) {
+    if (!ld.localBusiness && !ld.organization) {
+      add('warning', 'local', 'Brak schema Organization/LocalBusiness', 'Strona wygląda na lokalną/kontaktową, ale brak danych strukturalnych firmy (NAP w schema).');
+    }
+    if (!data.hasPhoneInText && data.telLinks === 0) {
+      add('notice', 'local', 'Brak numeru telefonu', 'Brak widocznego telefonu (NAP) — istotne dla lokalnego SEO.');
+    }
+    if (!data.hasPostalCode && !data.hasStreetMention && !ld.address) {
+      add('notice', 'local', 'Brak adresu (NAP)', 'Brak wykrytego adresu pocztowego — uzupełnij spójne dane NAP.');
+    }
+    if (!data.hasGeoMeta && !ld.localBusiness) {
+      add('notice', 'local', 'Brak geo meta / współrzędnych', 'Brak meta geo.region/geo.position/ICBM lub współrzędnych w schema.');
+    }
+    if (!data.hasMapEmbed && (ld.localBusiness || ld.address)) {
+      add('notice', 'local', 'Brak osadzonej mapy', 'Rozważ osadzenie mapy (Google Maps) na stronie kontaktowej/lokalizacji.');
+    }
+  }
+
   return issues;
 }

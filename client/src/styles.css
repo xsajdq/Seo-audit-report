@@ -217,6 +217,13 @@ select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
 .issue-flat { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
 .issue-flat b { font-size: 14px; } .issue-flat p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
 .cwv { background: #f0f9ff; border-radius: 10px; padding: 12px 16px; margin: 12px 0; }
+.signal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 8px 0 16px; }
+.signal { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); }
+.signal.on { background: #f0fdf4; border-color: #bbf7d0; }
+.signal.off { background: #fef2f2; border-color: #fecaca; }
+.signal-icon { font-weight: 700; }
+.signal.on .signal-icon { color: #16a34a; }
+.signal.off .signal-icon { color: var(--error); }
 
 .error-card h2 { color: var(--error); }
 

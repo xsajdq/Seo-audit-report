@@ -53,6 +53,34 @@ export default function PageDetail({ page, onClose }) {
             </tbody>
           </table>
 
+          {s.geo && (
+            <>
+              <h4>GEO — gotowość pod AI (silniki generatywne)</h4>
+              <div className="signal-grid">
+                <Signal ok={s.geo.semanticHtml} label="Semantyczny HTML" />
+                <Signal ok={s.geo.hasAuthor} label="Autor (E-E-A-T)" />
+                <Signal ok={s.geo.hasModifiedDate || s.geo.hasPublishDate} label="Data publ./aktual." />
+                <Signal ok={s.geo.questionHeadings > 0 || s.geo.faqSchema} label="Pytania / FAQ" />
+                <Signal ok={s.geo.lists > 0 || s.geo.tables > 0} label="Listy / tabele" />
+                <Signal ok={s.geo.faqSchema} label="FAQ schema" />
+              </div>
+            </>
+          )}
+
+          {s.local && (
+            <>
+              <h4>Local / Geo SEO</h4>
+              <div className="signal-grid">
+                <Signal ok={s.local.organization || s.local.localBusiness} label="Schema firmy" />
+                <Signal ok={s.local.address} label="Adres (NAP)" />
+                <Signal ok={s.local.phone} label="Telefon" />
+                <Signal ok={s.local.geoMeta} label="Geo meta" />
+                <Signal ok={s.local.map} label="Mapa" />
+                <Signal ok={s.local.sameAs > 0} label={`sameAs (${s.local.sameAs})`} />
+              </div>
+            </>
+          )}
+
           {page.redirectChain?.length > 0 && (
             <>
               <h4>Łańcuch przekierowań</h4>
@@ -83,6 +111,14 @@ export default function PageDetail({ page, onClose }) {
 
 function Meta({ label, value }) {
   return <div className="meta-item"><span>{label}</span><b>{value}</b></div>;
+}
+function Signal({ ok, label }) {
+  return (
+    <div className={`signal ${ok ? 'on' : 'off'}`}>
+      <span className="signal-icon">{ok ? '✓' : '✗'}</span>
+      <span>{label}</span>
+    </div>
+  );
 }
 function Row({ label, value, extra }) {
   return (

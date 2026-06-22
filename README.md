@@ -22,6 +22,8 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - Bezpieczeństwo: HTTPS, mixed content, HSTS, CSP, X-Content-Type-Options
   - Międzynarodowe: `lang`, hreflang (self-reference)
   - Struktura URL: długość, wielkie litery, podkreślenia, nadmiar parametrów
+  - **GEO (Generative Engine Optimization)** — gotowość pod silniki AI (AI Overviews, ChatGPT, Perplexity): semantyczny HTML, sygnały E-E-A-T (autor), świeżość (data publ./aktualizacji), nagłówki-pytania i FAQ, listy/tabele, długość akapitów, treściowe schema (Article/FAQ/HowTo), `llms.txt`, encja Organization + `sameAs`
+  - **Local / Geo SEO** — schema Organization/LocalBusiness, NAP (adres/telefon), geo meta (geo.region/position, ICBM), osadzona mapa
 - **Analiza całej witryny**: zduplikowane tytuły/opisy, strony osierocone, rozkład głębokości.
 - **Render JavaScript (opcjonalnie)** — Playwright/Chromium: render stron na JS + **Core Web Vitals** (LCP, FCP, CLS), wykrywanie treści zależnej od JS.
 - **Scoring 0–100** z oceną A–F i wynikami per kategoria.
@@ -100,7 +102,8 @@ client/   React + Vite
 - [x] **Faza 3** — analiza witryny (duplikaty, osierocone, sitemap/robots)
 - [x] **Faza 4** — render JS + Core Web Vitals (Playwright)
 - [x] **Faza 5a** — dopasowanie słów kluczowych do podstron + sugestie meta title/description + propozycje nowych stron
-- [ ] **Faza 5b** — pełna integracja Lighthouse, eksport do PDF, więcej reguł
+- [x] **Faza 5b** — kategorie **GEO (optymalizacja pod AI)** i **Local/Geo SEO** + check `llms.txt`
+- [ ] **Faza 5c** — pełna integracja Lighthouse, eksport do PDF, walidacja schema.org wg typów, kanibalizacja słów kluczowych
 
 ## Co warto dodać dalej (analiza braków audytu)
 
