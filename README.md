@@ -15,7 +15,7 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - Treść: H1 (brak/wiele), hierarchia nagłówków, thin content, stosunek tekst/HTML
   - Obrazy: brak atrybutu `alt`, brak wymiarów (ryzyko CLS)
   - Mobile: meta viewport
-  - Dane strukturalne: JSON-LD (składnia + **walidacja pól wg typu Schema.org**: Organization, LocalBusiness, RealEstateAgent, Article, Product, Review, FAQPage, BreadcrumbList, PostalAddress, Offer, Event, Person), microdata, RDFa
+  - Dane strukturalne: JSON-LD (składnia + **walidacja pól wg typu Schema.org — wiele branż**: Organization/Person/WebSite, LocalBusiness i ~60 podtypów (gastronomia, medycyna, hotele, sklepy, usługi, prawo, motoryzacja, uroda, finanse, fitness…), Article/BlogPosting/NewsArticle, Recipe, HowTo, FAQPage/QAPage, Course, Book, VideoObject/ImageObject, Product/Offer/Review/AggregateRating, JobPosting, Event, SoftwareApplication, BreadcrumbList, PostalAddress, ContactPoint, OpeningHoursSpecification, GeoCoordinates), microdata, RDFa
   - Social: Open Graph / Twitter Cards
   - Linki: wewnętrzne/zewnętrzne, nofollow, niedziałające linki (opcjonalnie)
   - Wydajność: czas odpowiedzi/TTFB, rozmiar HTML, kompresja (gzip/brotli), Cache-Control

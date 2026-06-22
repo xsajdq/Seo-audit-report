@@ -78,7 +78,7 @@ export function extractPageData(html, baseUrl) {
           types.push(...t);
           const ts = t.join(' ');
           if (/Organization/i.test(ts)) ldFlags.organization = true;
-          if (LOCAL_TYPES.test(ts)) ldFlags.localBusiness = true;
+          if (LOCAL_TYPES.test(ts) || t.some((x) => LB_SUBTYPES.has(x))) ldFlags.localBusiness = true;
           if (/FAQPage/i.test(ts)) ldFlags.faqPage = true;
           if (/BreadcrumbList/i.test(ts)) ldFlags.breadcrumb = true;
           ldEntities.push({ types: t, props: Object.keys(obj), obj });
@@ -261,31 +261,89 @@ export function extractPageData(html, baseUrl) {
   };
 }
 
-// Walidacja danych strukturalnych wg typu — wymagane (required) i zalecane (recommended)
-// właściwości najważniejszych typów Schema.org (m.in. dla nieruchomości).
+// Walidacja danych strukturalnych wg typu Schema.org — wymagane (required) i zalecane
+// (recommended) właściwości dla wielu branż (e-commerce, treści, usługi lokalne,
+// praca, eventy, kursy, oprogramowanie, media itd.).
+const LB = { required: ['name', 'address'], recommended: ['telephone', 'openingHoursSpecification', 'geo', 'image', 'priceRange', 'url'] };
+const ARTICLE = { required: ['headline', 'author', 'datePublished'], recommended: ['image', 'dateModified', 'publisher'] };
+
 const SCHEMA_RULES = {
-  Organization: { required: ['name', 'url'], recommended: ['logo', 'sameAs'] },
-  LocalBusiness: { required: ['name', 'address'], recommended: ['telephone', 'openingHours', 'image', 'geo', 'priceRange', 'url'] },
-  RealEstateAgent: { required: ['name', 'address'], recommended: ['telephone', 'openingHours', 'image', 'geo', 'areaServed', 'url'] },
-  PostalAddress: { required: ['streetAddress', 'addressLocality'], recommended: ['postalCode', 'addressCountry'] },
+  // Organizacje / encje
+  Organization: { required: ['name', 'url'], recommended: ['logo', 'sameAs', 'contactPoint'] },
+  Corporation: { required: ['name', 'url'], recommended: ['logo', 'sameAs'] },
+  NGO: { required: ['name', 'url'], recommended: ['logo', 'sameAs'] },
+  Person: { required: ['name'], recommended: ['jobTitle', 'image', 'sameAs', 'url'] },
+  WebSite: { required: ['name', 'url'], recommended: ['potentialAction'] },
+  WebPage: { required: ['name'], recommended: ['description'] },
   BreadcrumbList: { required: ['itemListElement'], recommended: [] },
-  Article: { required: ['headline', 'author', 'datePublished'], recommended: ['image', 'dateModified', 'publisher'] },
-  BlogPosting: { required: ['headline', 'author', 'datePublished'], recommended: ['image', 'dateModified', 'publisher'] },
-  NewsArticle: { required: ['headline', 'author', 'datePublished'], recommended: ['image', 'dateModified', 'publisher'] },
-  Product: { required: ['name'], recommended: ['image', 'offers', 'description', 'brand'] },
-  Offer: { required: ['price', 'priceCurrency'], recommended: ['availability'] },
-  Review: { required: ['author', 'reviewRating'], recommended: ['itemReviewed'] },
-  AggregateRating: { required: ['ratingValue'], recommended: ['reviewCount', 'ratingCount'] },
+
+  // Local business (bazowa + podtypy dziedziczą przez LB_SUBTYPES)
+  LocalBusiness: LB,
+  Service: { required: ['name'], recommended: ['provider', 'areaServed', 'description'] },
+
+  // Adres / kontakt / godziny / geo
+  PostalAddress: { required: ['streetAddress', 'addressLocality'], recommended: ['postalCode', 'addressCountry', 'addressRegion'] },
+  ContactPoint: { required: ['telephone'], recommended: ['contactType', 'areaServed', 'availableLanguage'] },
+  OpeningHoursSpecification: { required: ['dayOfWeek', 'opens', 'closes'], recommended: [] },
+  GeoCoordinates: { required: ['latitude', 'longitude'], recommended: [] },
+
+  // Treści / publishing
+  Article: ARTICLE, BlogPosting: ARTICLE, NewsArticle: ARTICLE, TechArticle: ARTICLE,
+  Recipe: { required: ['name', 'image', 'recipeIngredient', 'recipeInstructions'], recommended: ['author', 'datePublished', 'nutrition', 'aggregateRating', 'prepTime', 'cookTime'] },
+  HowTo: { required: ['name', 'step'], recommended: ['image', 'totalTime', 'tool', 'supply'] },
   FAQPage: { required: ['mainEntity'], recommended: [] },
-  Event: { required: ['name', 'startDate'], recommended: ['location', 'endDate'] },
-  Person: { required: ['name'], recommended: ['jobTitle', 'image'] },
+  QAPage: { required: ['mainEntity'], recommended: [] },
+  Question: { required: ['name', 'acceptedAnswer'], recommended: ['answerCount'] },
+  Course: { required: ['name', 'description'], recommended: ['provider', 'hasCourseInstance'] },
+  Book: { required: ['name', 'author'], recommended: ['isbn', 'publisher'] },
+  PodcastEpisode: { required: ['name', 'url'], recommended: ['datePublished', 'associatedMedia'] },
+
+  // Media
+  VideoObject: { required: ['name', 'thumbnailUrl', 'uploadDate'], recommended: ['description', 'duration', 'contentUrl', 'embedUrl'] },
+  ImageObject: { required: ['contentUrl'], recommended: ['license', 'creator', 'creditText'] },
+
+  // E-commerce
+  Product: { required: ['name'], recommended: ['image', 'offers', 'description', 'brand', 'sku', 'aggregateRating', 'review'] },
+  Offer: { required: ['price', 'priceCurrency'], recommended: ['availability', 'url', 'priceValidUntil', 'itemCondition'] },
+  AggregateOffer: { required: ['lowPrice', 'priceCurrency'], recommended: ['highPrice', 'offerCount'] },
+  Review: { required: ['author', 'reviewRating'], recommended: ['itemReviewed', 'datePublished'] },
+  AggregateRating: { required: ['ratingValue'], recommended: ['reviewCount', 'ratingCount', 'bestRating'] },
+  Brand: { required: ['name'], recommended: ['logo'] },
+
+  // Eventy / praca / software
+  Event: { required: ['name', 'startDate'], recommended: ['location', 'endDate', 'offers', 'image', 'eventStatus', 'description'] },
+  JobPosting: { required: ['title', 'description', 'datePosted', 'hiringOrganization', 'jobLocation'], recommended: ['baseSalary', 'employmentType', 'validThrough'] },
+  SoftwareApplication: { required: ['name'], recommended: ['offers', 'aggregateRating', 'operatingSystem', 'applicationCategory'] },
+
+  // Medyczne (organizacje traktowane jak LocalBusiness przez podtypy)
+  MedicalOrganization: LB,
 };
+
+// Podtypy LocalBusiness — walidowane wg reguły bazowej LocalBusiness (jeśli brak własnej).
+const LB_SUBTYPES = new Set([
+  'RealEstateAgent', 'Restaurant', 'Store', 'GroceryStore', 'ClothingStore', 'ElectronicsStore',
+  'Dentist', 'Physician', 'MedicalClinic', 'Hospital', 'Pharmacy', 'VeterinaryCare',
+  'Hotel', 'LodgingBusiness', 'BedAndBreakfast', 'Resort', 'Motel',
+  'ProfessionalService', 'LegalService', 'Attorney', 'Notary', 'AccountingService', 'InsuranceAgency',
+  'Plumber', 'Electrician', 'HVACBusiness', 'RoofingContractor', 'GeneralContractor', 'HomeAndConstructionBusiness', 'MovingCompany',
+  'AutoRepair', 'AutoDealer', 'AutoBodyShop', 'GasStation', 'CarWash',
+  'BeautySalon', 'HairSalon', 'NailSalon', 'DaySpa', 'HealthAndBeautyBusiness',
+  'BankOrCreditUnion', 'FinancialService', 'TravelAgency', 'FoodEstablishment', 'CafeOrCoffeeShop', 'Bakery', 'BarOrPub',
+  'EntertainmentBusiness', 'SportsActivityLocation', 'GymOrFitnessCenter', 'ChildCare', 'School', 'EducationalOrganization',
+  'GovernmentOffice', 'TouristAttraction', 'NightClub', 'Library', 'EmploymentAgency', 'DryCleaningOrLaundry',
+]);
+
+function ruleFor(type) {
+  if (SCHEMA_RULES[type]) return SCHEMA_RULES[type];
+  if (LB_SUBTYPES.has(type)) return LB;
+  return null;
+}
 
 function validateSchemaEntities(entities) {
   const issues = [];
   for (const ent of entities) {
     for (const type of ent.types) {
-      const rule = SCHEMA_RULES[type];
+      const rule = ruleFor(type);
       if (!rule) continue;
       const present = new Set(ent.props);
       const missingReq = rule.required.filter((p) => !present.has(p));
