@@ -37,6 +37,19 @@ export function startAudit(params, handlers) {
   };
 }
 
+export async function matchKeywords(resultId, keywords, brand) {
+  const r = await fetch(`/api/result/${resultId}/keywords`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keywords, brand }),
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error || `Błąd ${r.status}`);
+  }
+  return r.json();
+}
+
 export async function getHealth() {
   try {
     const r = await fetch('/api/health');

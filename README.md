@@ -27,6 +27,10 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
 - **Scoring 0–100** z oceną A–F i wynikami per kategoria.
 - **Eksport**: raport HTML (do druku/PDF), CSV, JSON.
 - **Live progress** przez SSE — widzisz skanowanie na żywo.
+- **Dopasowanie słów kluczowych do podstron** — wklejasz listę fraz, a narzędzie:
+  - dobiera najtrafniejszą istniejącą podstronę (algorytm ważony po polach: URL/title/H1/nagłówki/opis/treść + lekki polski stemmer),
+  - dla fraz bez dobrej strony proponuje **utworzenie nowej podstrony** (z klastrowaniem podobnych fraz i slugiem),
+  - generuje sugerowany **meta title i description** wg schematu `główne słowo - dodatkowe frazy | brand` (z limitami długości i przyciskiem „Kopiuj").
 
 ## Wymagania
 
@@ -95,7 +99,35 @@ client/   React + Vite
 - [x] **Faza 2** — komplet checków technicznych (~40 reguł)
 - [x] **Faza 3** — analiza witryny (duplikaty, osierocone, sitemap/robots)
 - [x] **Faza 4** — render JS + Core Web Vitals (Playwright)
-- [ ] **Faza 5** — pełna integracja Lighthouse, porównania historyczne, harmonogramy, więcej reguł (np. analiza obrazów WebP/AVIF, walidacja schema.org wg typów)
+- [x] **Faza 5a** — dopasowanie słów kluczowych do podstron + sugestie meta title/description + propozycje nowych stron
+- [ ] **Faza 5b** — pełna integracja Lighthouse, eksport do PDF, więcej reguł
+
+## Co warto dodać dalej (analiza braków audytu)
+
+Aktualny audyt pokrywa większość krytycznych obszarów technicznego SEO. Obszary do rozbudowy:
+
+**Wydajność / zasoby**
+- Pełny Lighthouse (Performance/Accessibility/Best Practices/SEO score, realne CWV pod throttlingiem mobile)
+- Analiza zasobów: nieskompresowane/niezminifikowane CSS/JS, brak `loading=lazy`, format obrazów (WebP/AVIF vs JPG/PNG), zasoby renderujące-blokująco
+
+**Treść / semantyka**
+- Wykrywanie duplikacji treści (near-duplicate, shingling/MinHash) — teraz tylko duplikaty title/description
+- Analiza słów kluczowych w treści (gęstość, kanibalizacja między podstronami)
+- Czytelność tekstu, język treści vs deklarowany `lang`
+
+**Indeksowalność / architektura**
+- Walidacja schema.org wg typów (wymagane pola dla Product/Article/FAQ/BreadcrumbList) + podgląd rich results
+- Spójność canonical ↔ hreflang ↔ sitemap (np. URL w sitemap z noindex, canonical do noindex)
+- Głębokość kliknięć vs ranking, wykrywanie pętli przekierowań, „soft 404"
+- Mapa linkowania wewnętrznego (anchor text, rozkład PageRank/siły linków)
+
+**Dostępność / UX (pośrednio SEO)**
+- Kontrast, etykiety formularzy, ARIA, kolejność nagłówków jako pełny audyt a11y
+- Favicon/manifest/PWA, AMP walidacja
+
+**Operacyjne**
+- Porównania historyczne między audytami (mimo braku stałej bazy — eksport/import migawek)
+- Harmonogramy i alerty, audyt wielu domen, integracja z Google Search Console (opcjonalnie)
 
 ## Licencja
 

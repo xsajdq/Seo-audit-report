@@ -297,6 +297,7 @@ function serializePage(p) {
           metaDescription: d.metaDescription,
           metaDescriptionLength: d.metaDescriptionLength,
           h1: d.headings.h1,
+          h2: d.headings.h2.slice(0, 15),
           h1Count: d.h1Count,
           canonical: d.canonical,
           metaRobots: d.metaRobots,
@@ -311,6 +312,8 @@ function serializePage(p) {
           structuredTypes: d.jsonLd.flatMap((j) => j.types),
           hasOpenGraph: !!(d.og['og:title'] || d.og['og:image']),
           hreflangCount: d.hreflang.length,
+          headingsText: d.headingsText,
+          bodySample: d.bodySample,
         }
       : null,
   };

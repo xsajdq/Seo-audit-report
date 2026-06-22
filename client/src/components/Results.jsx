@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import ScoreGauge from './ScoreGauge.jsx';
 import PageDetail from './PageDetail.jsx';
+import KeywordMapper from './KeywordMapper.jsx';
 
 const SEV_LABEL = { error: 'Błędy', warning: 'Ostrzeżenia', notice: 'Uwagi' };
 
@@ -54,12 +55,14 @@ export default function Results({ result, resultId, onReset }) {
         <button className={tab === 'issues' ? 'active' : ''} onClick={() => setTab('issues')}>Problemy ({aggregatedIssues.length})</button>
         <button className={tab === 'pages' ? 'active' : ''} onClick={() => setTab('pages')}>Strony ({result.pages.length})</button>
         <button className={tab === 'site' ? 'active' : ''} onClick={() => setTab('site')}>Analiza witryny</button>
+        <button className={tab === 'keywords' ? 'active' : ''} onClick={() => setTab('keywords')}>Słowa kluczowe</button>
       </div>
 
       {tab === 'overview' && <Categories categories={result.summary.categories} />}
       {tab === 'issues' && <IssuesList issues={aggregatedIssues} onSelectPage={setSelectedPage} pages={result.pages} />}
       {tab === 'pages' && <PagesTable pages={result.pages} onSelect={setSelectedPage} />}
       {tab === 'site' && <SiteAnalysis result={result} />}
+      {tab === 'keywords' && <KeywordMapper resultId={resultId} />}
 
       {selectedPage && (
         <PageDetail page={selectedPage} onClose={() => setSelectedPage(null)} />

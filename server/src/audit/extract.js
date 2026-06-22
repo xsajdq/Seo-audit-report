@@ -129,6 +129,9 @@ export function extractPageData(html, baseUrl) {
   const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
   const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
   const textRatio = html.length > 0 ? bodyText.length / html.length : 0;
+  // Próbka treści do dopasowania słów kluczowych (ograniczona, by nie rozdmuchać payloadu).
+  const headingsText = [...headings.h1, ...headings.h2, ...headings.h3].join(' . ');
+  const bodySample = bodyText.slice(0, 1500);
 
   return {
     title,
@@ -168,5 +171,7 @@ export function extractPageData(html, baseUrl) {
     wordCount,
     textRatio,
     htmlSize: html.length,
+    headingsText,
+    bodySample,
   };
 }

@@ -6,6 +6,7 @@ import fs from 'fs';
 import { runAudit, CrawlController } from './crawler/crawler.js';
 import { isRenderAvailable, closeBrowser } from './render/renderer.js';
 import { toCSV, toHTMLReport } from './report/exporter.js';
+import { matchKeywords } from './keyword/keywordMatcher.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -91,6 +92,25 @@ app.get('/api/result/:id', (req, res) => {
   const r = lastResults.get(req.params.id);
   if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku' });
   res.json(r);
+});
+
+// --- Dopasowanie słów kluczowych do podstron ---
+app.post('/api/result/:id/keywords', (req, res) => {
+  const r = lastResults.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku audytu (uruchom audyt ponownie).' });
+  const { keywords, brand } = req.body || {};
+  if (!Array.isArray(keywords) || keywords.length === 0) {
+    return res.status(400).json({ error: 'Podaj listę słów kluczowych (pole "keywords").' });
+  }
+  if (keywords.length > 5000) {
+    return res.status(400).json({ error: 'Zbyt wiele słów kluczowych (limit 5000).' });
+  }
+  try {
+    const result = matchKeywords(r.pages, keywords, { brand: (brand || '').trim() });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // --- Eksport ---
