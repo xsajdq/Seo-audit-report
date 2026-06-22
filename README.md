@@ -24,7 +24,13 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - Struktura URL: długość, wielkie litery, podkreślenia, nadmiar parametrów
   - **GEO (Generative Engine Optimization)** — gotowość pod silniki AI (AI Overviews, ChatGPT, Perplexity): semantyczny HTML, sygnały E-E-A-T (autor), świeżość (data publ./aktualizacji), nagłówki-pytania i FAQ, listy/tabele, długość akapitów, treściowe schema (Article/FAQ/HowTo), `llms.txt`, encja Organization + `sameAs`
   - **Local / Geo SEO** — schema Organization/LocalBusiness, NAP (adres/telefon), geo meta (geo.region/position, ICBM), osadzona mapa
-- **Analiza całej witryny**: zduplikowane tytuły/opisy, strony osierocone, rozkład głębokości.
+- **Analiza całej witryny (cross-page, jak topowe crawlery)**:
+  - zduplikowane tytuły/opisy, **near-duplicate content** (podobieństwo Jaccarda na treści)
+  - **graf linków wewnętrznych**: linki do stron 4xx/5xx, linki do przekierowań, strony osierocone
+  - **głębokość kliknięć** (strony >3 kliki od startu), rozkład głębokości
+  - **reconciliacja sitemap ↔ crawl**: nieindeksowalne URL-e w sitemap, strony spoza sitemap
+  - **kanonikalizacja domeny**: http→https, spójność www/non-www
+  - jakość anchor textów (puste/generyczne), przekierowania tymczasowe (302/307), konflikt noindex+canonical
 - **Render JavaScript (opcjonalnie)** — Playwright/Chromium: render stron na JS + **Core Web Vitals** (LCP, FCP, CLS, TBT jako proxy INP), wykrywanie treści zależnej od JS.
 - **Scoring 0–100** z oceną A–F i wynikami per kategoria.
 - **Eksport**: raport HTML (do druku/PDF), CSV, JSON.
@@ -105,7 +111,24 @@ client/   React + Vite
 - [x] **Faza 5a** — dopasowanie słów kluczowych do podstron + sugestie meta title/description + propozycje nowych stron
 - [x] **Faza 5b** — kategorie **GEO (optymalizacja pod AI)** i **Local/Geo SEO** + check `llms.txt`
 - [x] **Faza 5c** — walidacja Schema.org wg typów + klasyfikacja intencji fraz + TBT/INP
-- [ ] **Faza 6** — analiza konkurencji i luki frazowe/treściowe (skan konkurentów), pełny Lighthouse, eksport PDF
+- [x] **Faza 5d** — inteligencja cross-page (graf linków, broken/redirect internal, sitemap↔crawl, near-duplicate, click depth, kanonikalizacja domeny, anchor text)
+- [ ] **Faza 6** — analiza konkurencji i luki frazowe/treściowe (skan konkurentów), pełny Lighthouse, eksport PDF, analiza logów serwera
+
+## Porównanie z czołowymi narzędziami
+
+| Obszar | Screaming Frog / Sitebulb | Ta aplikacja |
+|---|---|---|
+| Crawl, status kody, meta, nagłówki, canonical, hreflang | ✅ | ✅ |
+| Graf linków wewnętrznych (broken/redirect/orphan) | ✅ | ✅ |
+| Near-duplicate / duplikaty | ✅ | ✅ (Jaccard) |
+| Click depth / architektura | ✅ | ✅ (metryki) |
+| Dane strukturalne (walidacja wg typu) | ✅ | ✅ (wiele branż) |
+| Render JS + Core Web Vitals | ✅ | ✅ (Playwright) |
+| GEO (AI) + Local SEO + mapowanie fraz | częściowo | ✅ |
+| Integracje GA/GSC/PSI | ✅ | ❌ (świadomie 100% lokalnie) |
+| Analiza logów serwera | ✅ (Log Analyzer) | ⏳ planowane |
+| Analiza konkurencji / luki frazowe | ✅ (Ahrefs/Semrush) | ⏳ planowane |
+| Wizualizacja architektury (graf) | ✅ (Sitebulb) | ⏳ planowane |
 
 ## Co warto dodać dalej (analiza braków audytu)
 

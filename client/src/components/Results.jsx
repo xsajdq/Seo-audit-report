@@ -44,6 +44,10 @@ export default function Results({ result, resultId, onReset }) {
             <li><span>Zduplikowane tytuły</span><b className={result.site.duplicateTitles ? 'warn' : ''}>{result.site.duplicateTitles}</b></li>
             <li><span>Zduplikowane opisy</span><b className={result.site.duplicateDescriptions ? 'warn' : ''}>{result.site.duplicateDescriptions}</b></li>
             <li><span>Strony osierocone</span><b className={result.site.orphanPages ? 'warn' : ''}>{result.site.orphanPages}</b></li>
+            <li><span>Linki do błędów (4xx/5xx)</span><b className={result.site.brokenInternalTargets ? 'warn' : ''}>{result.site.brokenInternalTargets ?? 0}</b></li>
+            <li><span>Linki do przekierowań</span><b className={result.site.redirectInternalTargets ? 'warn' : ''}>{result.site.redirectInternalTargets ?? 0}</b></li>
+            <li><span>Near-duplicate</span><b className={result.site.nearDuplicates ? 'warn' : ''}>{result.site.nearDuplicates ?? 0}</b></li>
+            <li><span>Maks. głębokość kliknięć</span><b className={result.site.maxDepth >= 4 ? 'warn' : ''}>{result.site.maxDepth ?? '—'}</b></li>
             <li><span>robots.txt</span><b>{result.robots.exists ? '✓' : '✗'}</b></li>
             <li><span>Sitemap</span><b>{result.sitemaps.length ? '✓' : '✗'}</b></li>
             <li><span>llms.txt (GEO/AI)</span><b className={result.llmsTxt?.exists ? '' : 'warn'}>{result.llmsTxt?.exists ? '✓' : '✗'}</b></li>

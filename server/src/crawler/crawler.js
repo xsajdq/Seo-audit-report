@@ -174,7 +174,11 @@ export async function runAudit(opts, emit = () => {}, controller = new CrawlCont
 
   // Analiza całej witryny
   emit({ type: 'status', phase: 'analyze', message: 'Analiza całej witryny…' });
-  const site = analyzeSite(pages, { startUrl: start });
+  const site = analyzeSite(pages, { startUrl: start, sitemapUrls });
+
+  // Kanonikalizacja domeny: http→https oraz spójność www/non-www (klasyczny check specjalisty)
+  const domainIssues = await checkDomainCanonicalization(origin);
+  site.issues.push(...domainIssues);
 
   // GEO na poziomie witryny: llms.txt + spójność encji (sameAs/Organization)
   if (!llmsTxt.exists) {
@@ -218,6 +222,36 @@ export async function runAudit(opts, emit = () => {}, controller = new CrawlCont
 
   emit({ type: 'done', result });
   return result;
+}
+
+// Sprawdza http→https oraz spójność www/non-www dla strony głównej.
+async function checkDomainCanonicalization(origin) {
+  const issues = [];
+  try {
+    const u = new URL(origin);
+    const root = u.hostname.replace(/^www\./, '');
+    const httpVariant = `http://${u.hostname}/`;
+    const wwwVariant = `https://www.${root}/`;
+    const nonWwwVariant = `https://${root}/`;
+
+    const [http, www, nonWww] = await Promise.all([
+      fetchUrl(httpVariant, { method: 'HEAD', timeout: 8000 }).catch(() => null),
+      fetchUrl(wwwVariant, { method: 'HEAD', timeout: 8000 }).catch(() => null),
+      fetchUrl(nonWwwVariant, { method: 'HEAD', timeout: 8000 }).catch(() => null),
+    ]);
+
+    // http powinno przekierowywać na https
+    if (http && http.finalUrl && http.finalUrl.startsWith('http://') && http.status > 0) {
+      issues.push({ severity: 'error', category: 'security', title: 'Brak przekierowania http→https', detail: `${httpVariant} nie przekierowuje na HTTPS.` });
+    }
+    // www i non-www nie powinny obie zwracać 200 (duplikacja strony głównej)
+    const wwwOk = www && www.status >= 200 && www.status < 300 && www.redirectChain.length === 0;
+    const nonWwwOk = nonWww && nonWww.status >= 200 && nonWww.status < 300 && nonWww.redirectChain.length === 0;
+    if (wwwOk && nonWwwOk) {
+      issues.push({ severity: 'warning', category: 'indexability', title: 'Brak kanonikalizacji www/non-www', detail: 'Zarówno wersja www, jak i non-www zwracają 200 bez przekierowania — duplikacja strony głównej. Wybierz jedną i przekieruj 301.' });
+    }
+  } catch { /* sieć / parsowanie — pomiń */ }
+  return issues;
 }
 
 async function auditPage(item, { renderJs }) {

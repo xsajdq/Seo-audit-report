@@ -34,6 +34,11 @@ export function runChecks(page) {
     const sev = response.redirectChain.length > 1 ? 'warning' : 'notice';
     add(sev, 'indexability', `Przekierowanie (${response.redirectChain.length})`,
       `Łańcuch przekierowań: ${response.redirectChain.map((r) => `${r.status}→`).join('')} ${response.finalUrl}`);
+    // Przekierowania tymczasowe użyte tam, gdzie zwykle powinno być 301
+    const temp = response.redirectChain.filter((r) => [302, 303, 307].includes(r.status));
+    if (temp.length > 0) {
+      add('warning', 'indexability', 'Przekierowanie tymczasowe (302/307)', `Wykryto ${temp.length} przekierowań tymczasowych — jeśli zmiana jest trwała, użyj 301.`);
+    }
   }
 
   // Canonical
@@ -47,6 +52,9 @@ export function runChecks(page) {
       const self = response.finalUrl.replace(/#.*$/, '');
       if (c.replace(/\/$/, '') !== self.replace(/\/$/, '')) {
         add('notice', 'indexability', 'Canonical wskazuje na inny URL', `Canonical: ${c}`);
+        if (noindex) {
+          add('warning', 'indexability', 'Konflikt: noindex + canonical na inny URL', 'Sprzeczne sygnały — noindex mówi „nie indeksuj", a canonical wskazuje stronę kanoniczną.');
+        }
       }
     } catch {
       add('warning', 'indexability', 'Nieprawidłowy URL w canonical', `Wartość: ${data.canonical}`);
@@ -199,6 +207,29 @@ export function runChecks(page) {
       add('notice', 'url', 'Wiele parametrów w URL', `${[...u.searchParams].length} parametrów query.`);
     }
   } catch { /* ignore */ }
+
+  // ===== ARCHITEKTURA / CRAWL =====
+  // Głębokość kliknięć — ważne strony powinny być ≤3 kliki od strony głównej.
+  if (typeof page.depth === 'number' && page.depth >= 4 && response.status < 300) {
+    add('notice', 'architecture', `Duża głębokość kliknięć (${page.depth})`, `Strona oddalona o ${page.depth} kliknięć od strony startowej — utrudnia indeksację i przepływ link juice.`);
+  }
+  // Jakość anchor textów linków wewnętrznych
+  if (data.internalLinks && data.internalLinks.length > 0) {
+    const generic = /^(kliknij|kliknij tutaj|tutaj|tu|więcej|czytaj więcej|zobacz|zobacz więcej|sprawdź|click here|here|read more|more|link)\s*$/i;
+    let empty = 0;
+    let genericCount = 0;
+    for (const l of data.internalLinks) {
+      const t = (l.text || '').trim();
+      if (!t) empty++;
+      else if (generic.test(t)) genericCount++;
+    }
+    if (empty > 0) {
+      add('notice', 'architecture', 'Linki wewnętrzne bez tekstu kotwicy', `${empty} linków wewnętrznych nie ma tekstu (anchor) — np. linki-obrazki bez alt.`);
+    }
+    if (genericCount >= 3) {
+      add('notice', 'architecture', 'Generyczne anchor texty', `${genericCount} linków z mało opisowym tekstem (np. „kliknij tutaj") — używaj fraz tematycznych.`);
+    }
+  }
 
   // ===== GEO — Generative Engine Optimization (widoczność w silnikach AI) =====
   // Treść o realnej objętości — oceniamy GEO tylko dla stron treściowych.

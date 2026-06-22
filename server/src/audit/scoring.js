@@ -15,6 +15,7 @@ export const CATEGORIES = {
   url: 'Struktura URL',
   geo: 'GEO (AI / silniki generatywne)',
   local: 'Local / Geo SEO',
+  architecture: 'Architektura / linkowanie',
 };
 
 export function scoreAudit(pages, siteIssues = []) {
