@@ -129,6 +129,29 @@ function confidenceLabel(score) {
 
 const ASSIGN_THRESHOLD = 25;
 
+// --- Klasyfikacja intencji frazy: transakcyjna / informacyjna / nawigacyjna / ogólna + flaga lokalna ---
+const TRANSACTIONAL = /\b(kup|kupic|kupno|kupie|cena|cennik|cenowy|sprzedaz|sprzedam|sprzedazy|wynajem|wynajac|wynajme|najem|tanio|tani|tania|promocja|rabat|sklep|oferta|oferty|zamow|zamowic|koszt|kosztuje|buy|price|sale|rent|cheap|order|deal)\b/;
+const INFORMATIONAL = /\b(jak|co|czy|dlaczego|ile|kiedy|gdzie|czym|jaki|jaka|jakie|jakich|poradnik|porady|krok|przewodnik|instrukcja|definicja|znaczenie|vs|kontra|przyklady|how|what|why|when|guide|tutorial)\b/;
+// Małe wsparcie wykrywania fraz lokalnych (najważniejsze miasta PL + wskazówki lokalizacyjne)
+const PL_CITIES = /\b(warszawa|krakow|lodz|wroclaw|poznan|gdansk|szczecin|bydgoszcz|lublin|katowice|bialystok|gdynia|czestochowa|radom|sosnowiec|torun|kielce|rzeszow|gliwice|zabrze|olsztyn|bielsko|bytom|zakopane|sopot|gniezno)\b/;
+const LOCAL_CUES = /\b(blisko|okolica|okolicy|dzielnica|dzielnicy|osiedle|osiedlu|ulica|ulicy|centrum|wojewodztwo|powiat|gmina|near|local)\b/;
+
+function classifyIntent(keywordRaw, brand) {
+  const norm = normalize(keywordRaw);
+  const brandNorm = brand ? normalize(brand) : '';
+  let intent = 'ogólna';
+  // słowa-pytania/poradnikowe mają priorytet nad komercyjnymi (np. "jak kupić" = informacyjna)
+  if (brandNorm && norm.includes(brandNorm)) intent = 'nawigacyjna';
+  else if (INFORMATIONAL.test(norm)) intent = 'informacyjna';
+  else if (TRANSACTIONAL.test(norm)) intent = 'transakcyjna';
+
+  // Lokalna: miasto z listy, wskazówki lokalizacyjne, lub słowo zaczynające się wielką literą
+  // w oryginale (nie na początku frazy) — typowa nazwa własna miejsca.
+  const capPlace = /\s[A-ZŻŹĆĄŚĘŁÓŃ][a-zżźćńółęąś]+/.test(keywordRaw.trim());
+  const local = PL_CITIES.test(norm) || LOCAL_CUES.test(norm) || capPlace;
+  return { intent, local };
+}
+
 export function matchKeywords(pages, keywords, { brand = '' } = {}) {
   const cleanKeywords = [...new Set(keywords.map((k) => k.trim()).filter(Boolean))];
   const indexable = pages.filter(
@@ -138,8 +161,13 @@ export function matchKeywords(pages, keywords, { brand = '' } = {}) {
 
   const perPage = new Map(); // url -> { page, keywords: [{keyword, score, confidence}] }
   const unmatched = [];
+  const intents = { transakcyjna: 0, informacyjna: 0, nawigacyjna: 0, 'ogólna': 0, lokalna: 0 };
 
   for (const kw of cleanKeywords) {
+    const { intent, local } = classifyIntent(kw, brand);
+    intents[intent] = (intents[intent] || 0) + 1;
+    if (local) intents.lokalna++;
+
     let best = null;
     for (const prof of profiles) {
       const res = scoreKeyword(kw, prof);
@@ -152,11 +180,15 @@ export function matchKeywords(pages, keywords, { brand = '' } = {}) {
         keyword: kw,
         score: best.score,
         confidence: confidenceLabel(best.score),
+        intent,
+        local,
         reasons: best.reasons,
       });
     } else {
       unmatched.push({
         keyword: kw,
+        intent,
+        local,
         bestScore: best ? best.score : 0,
         bestPage: best ? best.page.url : null,
       });
@@ -192,6 +224,7 @@ export function matchKeywords(pages, keywords, { brand = '' } = {}) {
       unmatched: unmatched.length,
       pagesTargeted: assignments.length,
       newPagesSuggested: newPages.length,
+      intents,
     },
     assignments,
     unmatched,

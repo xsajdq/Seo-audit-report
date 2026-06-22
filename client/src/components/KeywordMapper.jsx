@@ -73,6 +73,15 @@ function KeywordResults({ data }) {
         <Stat n={data.summary.newPagesSuggested} label="Nowych stron (sugestia)" cls="warn" />
       </div>
 
+      {data.summary.intents && (
+        <div className="kw-intents">
+          <span className="muted">Intencje:</span>
+          {Object.entries(data.summary.intents).filter(([, n]) => n > 0).map(([k, n]) => (
+            <span key={k} className={`intent-tag i-${k}`}>{k}: {n}</span>
+          ))}
+        </div>
+      )}
+
       <h4>Przypisania do istniejących podstron</h4>
       {data.assignments.length === 0 && <p className="muted">Brak dopasowań do istniejących stron.</p>}
       {data.assignments.map((a, i) => (
@@ -96,6 +105,8 @@ function KeywordResults({ data }) {
             {data.unmatched.map((u, i) => (
               <li key={i}>
                 <b>{u.keyword}</b>
+                {u.intent && <span className={`intent-tag i-${u.intent}`}>{u.intent}</span>}
+                {u.local && <span className="intent-tag i-lokalna">lokalna</span>}
                 <span className="muted"> — najlepszy wynik: {u.bestScore}/100{u.bestPage ? ` (${u.bestPage})` : ''}</span>
               </li>
             ))}
@@ -111,9 +122,12 @@ function PageAssignment({ a }) {
     <div className="kw-page">
       <a className="kw-url" href={a.url} target="_blank" rel="noreferrer">{a.url}</a>
       <div className="kw-chips">
-        <span className="chip kw-primary" title={`wynik: ${a.keywords[0].score}/100`}>★ {a.primary}</span>
-        {a.additional.map((k, i) => (
-          <span className="chip" key={i}>{k}</span>
+        {a.keywords.map((k, i) => (
+          <span className={`chip ${i === 0 ? 'kw-primary' : ''}`} key={i} title={`wynik: ${k.score}/100 · ${k.intent}${k.local ? ' · lokalna' : ''}`}>
+            {i === 0 ? '★ ' : ''}{k.keyword}
+            <em className={`intent-dot i-${k.intent}`} />
+            {k.local && <em className="intent-dot i-lokalna" />}
+          </span>
         ))}
       </div>
       <Suggestion label="Sugerowany Title" value={a.suggestedTitle} current={a.currentTitle} />

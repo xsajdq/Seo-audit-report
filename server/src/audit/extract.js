@@ -64,6 +64,7 @@ export function extractPageData(html, baseUrl) {
     breadcrumb: false, address: false, telephone: false, sameAs: [],
   };
   const LOCAL_TYPES = /LocalBusiness|Restaurant|Store|Dentist|Physician|Hotel|ProfessionalService|Plumber|AutoRepair|RealEstateAgent/i;
+  const ldEntities = []; // spłaszczone węzły {type, props} do walidacji pól
   $('script[type="application/ld+json"]').each((_, el) => {
     const raw = $(el).contents().text();
     try {
@@ -80,6 +81,7 @@ export function extractPageData(html, baseUrl) {
           if (LOCAL_TYPES.test(ts)) ldFlags.localBusiness = true;
           if (/FAQPage/i.test(ts)) ldFlags.faqPage = true;
           if (/BreadcrumbList/i.test(ts)) ldFlags.breadcrumb = true;
+          ldEntities.push({ types: t, props: Object.keys(obj), obj });
         }
         if (obj.author) ldFlags.author = true;
         if (obj.datePublished) ldFlags.datePublished = true;
@@ -98,6 +100,7 @@ export function extractPageData(html, baseUrl) {
       jsonLd.push({ valid: false, types: [] });
     }
   });
+  const schemaIssues = validateSchemaEntities(ldEntities);
   const microdata = $('[itemscope]').length;
   const rdfa = $('[typeof]').length;
 
@@ -237,6 +240,7 @@ export function extractPageData(html, baseUrl) {
     bodySample,
     // GEO / AI
     ldFlags,
+    schemaIssues,
     semantic,
     listCount,
     tableCount,
@@ -255,4 +259,44 @@ export function extractPageData(html, baseUrl) {
     hasStreetMention,
     hasPhoneInText,
   };
+}
+
+// Walidacja danych strukturalnych wg typu — wymagane (required) i zalecane (recommended)
+// właściwości najważniejszych typów Schema.org (m.in. dla nieruchomości).
+const SCHEMA_RULES = {
+  Organization: { required: ['name', 'url'], recommended: ['logo', 'sameAs'] },
+  LocalBusiness: { required: ['name', 'address'], recommended: ['telephone', 'openingHours', 'image', 'geo', 'priceRange', 'url'] },
+  RealEstateAgent: { required: ['name', 'address'], recommended: ['telephone', 'openingHours', 'image', 'geo', 'areaServed', 'url'] },
+  PostalAddress: { required: ['streetAddress', 'addressLocality'], recommended: ['postalCode', 'addressCountry'] },
+  BreadcrumbList: { required: ['itemListElement'], recommended: [] },
+  Article: { required: ['headline', 'author', 'datePublished'], recommended: ['image', 'dateModified', 'publisher'] },
+  BlogPosting: { required: ['headline', 'author', 'datePublished'], recommended: ['image', 'dateModified', 'publisher'] },
+  NewsArticle: { required: ['headline', 'author', 'datePublished'], recommended: ['image', 'dateModified', 'publisher'] },
+  Product: { required: ['name'], recommended: ['image', 'offers', 'description', 'brand'] },
+  Offer: { required: ['price', 'priceCurrency'], recommended: ['availability'] },
+  Review: { required: ['author', 'reviewRating'], recommended: ['itemReviewed'] },
+  AggregateRating: { required: ['ratingValue'], recommended: ['reviewCount', 'ratingCount'] },
+  FAQPage: { required: ['mainEntity'], recommended: [] },
+  Event: { required: ['name', 'startDate'], recommended: ['location', 'endDate'] },
+  Person: { required: ['name'], recommended: ['jobTitle', 'image'] },
+};
+
+function validateSchemaEntities(entities) {
+  const issues = [];
+  for (const ent of entities) {
+    for (const type of ent.types) {
+      const rule = SCHEMA_RULES[type];
+      if (!rule) continue;
+      const present = new Set(ent.props);
+      const missingReq = rule.required.filter((p) => !present.has(p));
+      const missingRec = rule.recommended.filter((p) => !present.has(p));
+      if (missingReq.length) {
+        issues.push({ type, severity: 'error', missing: missingReq, kind: 'required' });
+      }
+      if (missingRec.length) {
+        issues.push({ type, severity: 'notice', missing: missingRec, kind: 'recommended' });
+      }
+    }
+  }
+  return issues;
 }

@@ -254,6 +254,19 @@ code { background: #f1f5f9; padding: 1px 6px; border-radius: 5px; font-size: 0.9
 .kw-current { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .kw-current span { font-style: italic; }
 .btn.tiny { padding: 3px 10px; font-size: 12px; }
+.kw-intents { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; font-size: 13px; }
+.intent-tag { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+.intent-tag.i-transakcyjna { background: #dcfce7; color: #166534; }
+.intent-tag.i-informacyjna { background: #dbeafe; color: #1e40af; }
+.intent-tag.i-nawigacyjna { background: #f3e8ff; color: #6b21a8; }
+.intent-tag.i-ogólna { background: #f1f5f9; color: #475569; }
+.intent-tag.i-lokalna { background: #fef3c7; color: #92400e; }
+.intent-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; vertical-align: middle; }
+.intent-dot.i-transakcyjna { background: #16a34a; }
+.intent-dot.i-informacyjna { background: #2563eb; }
+.intent-dot.i-nawigacyjna { background: #9333ea; }
+.intent-dot.i-ogólna { background: #94a3b8; }
+.intent-dot.i-lokalna { background: #d97706; }
 .kw-unmatched { margin-top: 16px; font-size: 14px; }
 .kw-unmatched summary { cursor: pointer; color: var(--muted); }
 .kw-unmatched ul { margin: 8px 0; padding-left: 20px; }

@@ -15,7 +15,7 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - Treść: H1 (brak/wiele), hierarchia nagłówków, thin content, stosunek tekst/HTML
   - Obrazy: brak atrybutu `alt`, brak wymiarów (ryzyko CLS)
   - Mobile: meta viewport
-  - Dane strukturalne: JSON-LD (walidacja), microdata, RDFa
+  - Dane strukturalne: JSON-LD (składnia + **walidacja pól wg typu Schema.org**: Organization, LocalBusiness, RealEstateAgent, Article, Product, Review, FAQPage, BreadcrumbList, PostalAddress, Offer, Event, Person), microdata, RDFa
   - Social: Open Graph / Twitter Cards
   - Linki: wewnętrzne/zewnętrzne, nofollow, niedziałające linki (opcjonalnie)
   - Wydajność: czas odpowiedzi/TTFB, rozmiar HTML, kompresja (gzip/brotli), Cache-Control
@@ -25,14 +25,15 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - **GEO (Generative Engine Optimization)** — gotowość pod silniki AI (AI Overviews, ChatGPT, Perplexity): semantyczny HTML, sygnały E-E-A-T (autor), świeżość (data publ./aktualizacji), nagłówki-pytania i FAQ, listy/tabele, długość akapitów, treściowe schema (Article/FAQ/HowTo), `llms.txt`, encja Organization + `sameAs`
   - **Local / Geo SEO** — schema Organization/LocalBusiness, NAP (adres/telefon), geo meta (geo.region/position, ICBM), osadzona mapa
 - **Analiza całej witryny**: zduplikowane tytuły/opisy, strony osierocone, rozkład głębokości.
-- **Render JavaScript (opcjonalnie)** — Playwright/Chromium: render stron na JS + **Core Web Vitals** (LCP, FCP, CLS), wykrywanie treści zależnej od JS.
+- **Render JavaScript (opcjonalnie)** — Playwright/Chromium: render stron na JS + **Core Web Vitals** (LCP, FCP, CLS, TBT jako proxy INP), wykrywanie treści zależnej od JS.
 - **Scoring 0–100** z oceną A–F i wynikami per kategoria.
 - **Eksport**: raport HTML (do druku/PDF), CSV, JSON.
 - **Live progress** przez SSE — widzisz skanowanie na żywo.
 - **Dopasowanie słów kluczowych do podstron** — wklejasz listę fraz, a narzędzie:
   - dobiera najtrafniejszą istniejącą podstronę (algorytm ważony po polach: URL/title/H1/nagłówki/opis/treść + lekki polski stemmer),
   - dla fraz bez dobrej strony proponuje **utworzenie nowej podstrony** (z klastrowaniem podobnych fraz i slugiem),
-  - generuje sugerowany **meta title i description** wg schematu `główne słowo - dodatkowe frazy | brand` (z limitami długości i przyciskiem „Kopiuj").
+  - generuje sugerowany **meta title i description** wg schematu `główne słowo - dodatkowe frazy | brand` (z limitami długości i przyciskiem „Kopiuj"),
+  - **klasyfikuje frazy wg intencji** (transakcyjna / informacyjna / nawigacyjna / ogólna) + flaga **lokalna** (miasta PL, wskazówki lokalizacyjne).
 
 ## Wymagania
 
@@ -103,7 +104,8 @@ client/   React + Vite
 - [x] **Faza 4** — render JS + Core Web Vitals (Playwright)
 - [x] **Faza 5a** — dopasowanie słów kluczowych do podstron + sugestie meta title/description + propozycje nowych stron
 - [x] **Faza 5b** — kategorie **GEO (optymalizacja pod AI)** i **Local/Geo SEO** + check `llms.txt`
-- [ ] **Faza 5c** — pełna integracja Lighthouse, eksport do PDF, walidacja schema.org wg typów, kanibalizacja słów kluczowych
+- [x] **Faza 5c** — walidacja Schema.org wg typów + klasyfikacja intencji fraz + TBT/INP
+- [ ] **Faza 6** — analiza konkurencji i luki frazowe/treściowe (skan konkurentów), pełny Lighthouse, eksport PDF
 
 ## Co warto dodać dalej (analiza braków audytu)
 

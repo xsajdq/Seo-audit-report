@@ -29,6 +29,8 @@ export default function PageDetail({ page, onClose }) {
                 <Meta label="LCP" value={page.render.metrics.lcp ? `${page.render.metrics.lcp} ms` : '—'} />
                 <Meta label="FCP" value={page.render.metrics.fcp ? `${page.render.metrics.fcp} ms` : '—'} />
                 <Meta label="CLS" value={page.render.metrics.cls ?? '—'} />
+                <Meta label="TBT (proxy INP)" value={page.render.metrics.tbt != null ? `${page.render.metrics.tbt} ms` : '—'} />
+                <Meta label="INP" value="wymaga interakcji" />
                 <Meta label="DOM węzłów" value={page.render.metrics.domNodes ?? '—'} />
                 <Meta label="Błędy konsoli" value={page.render.metrics.consoleErrors ?? '—'} />
               </div>

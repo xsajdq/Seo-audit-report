@@ -132,6 +132,14 @@ export function runChecks(page) {
   if (data.jsonLd.length === 0 && data.microdata === 0 && data.rdfa === 0) {
     add('notice', 'structured', 'Brak danych strukturalnych', 'Strona nie zawiera JSON-LD, microdata ani RDFa.');
   }
+  // Walidacja pól wg typu Schema.org (błędy Schema.org)
+  for (const si of data.schemaIssues || []) {
+    if (si.kind === 'required') {
+      add('error', 'structured', `Schema ${si.type}: brak wymaganych pól`, `Brakuje: ${si.missing.join(', ')}.`);
+    } else {
+      add('notice', 'structured', `Schema ${si.type}: brak zalecanych pól`, `Warto dodać: ${si.missing.join(', ')}.`);
+    }
+  }
 
   // ===== OPEN GRAPH / SOCIAL =====
   if (!data.og['og:title'] && !data.og['og:image']) {

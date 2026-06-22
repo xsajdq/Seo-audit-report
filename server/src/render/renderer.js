@@ -79,6 +79,13 @@ export async function renderPage(url, { timeout = 30000 } = {}) {
       for (const e of performance.getEntriesByType('layout-shift') || []) {
         if (!e.hadRecentInput) cls += e.value;
       }
+      // TBT (Total Blocking Time) — proxy interaktywności (INP wymaga realnej interakcji)
+      let tbt = 0;
+      let longTasks = 0;
+      for (const e of performance.getEntriesByType('longtask') || []) {
+        const blocking = e.duration - 50;
+        if (blocking > 0) { tbt += blocking; longTasks++; }
+      }
       return {
         ttfb: nav.responseStart ? Math.round(nav.responseStart) : null,
         domContentLoaded: nav.domContentLoadedEventEnd ? Math.round(nav.domContentLoadedEventEnd) : null,
@@ -86,6 +93,8 @@ export async function renderPage(url, { timeout = 30000 } = {}) {
         fcp: fcp ? Math.round(fcp.startTime) : null,
         lcp: lcp ? Math.round(lcp.startTime || lcp.renderTime || lcp.loadTime) : null,
         cls: Math.round(cls * 1000) / 1000,
+        tbt: Math.round(tbt),
+        longTasks,
         domNodes: document.getElementsByTagName('*').length,
       };
     });
