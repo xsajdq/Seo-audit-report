@@ -1,0 +1,47 @@
+// Klient API: uruchamia audyt przez SSE i przekazuje zdarzenia do callbacków.
+export function startAudit(params, handlers) {
+  const qs = new URLSearchParams(params).toString();
+  const es = new EventSource(`/api/audit/stream?${qs}`);
+  let currentId = null;
+
+  es.onmessage = (e) => {
+    let data;
+    try {
+      data = JSON.parse(e.data);
+    } catch {
+      return;
+    }
+    if (data.type === 'start') currentId = data.id;
+    handlers.onEvent?.(data);
+    if (data.type === 'done') {
+      handlers.onDone?.(data.result, currentId);
+      es.close();
+    } else if (data.type === 'error') {
+      handlers.onError?.(data.message);
+      es.close();
+    }
+  };
+  es.onerror = () => {
+    handlers.onError?.('Utracono połączenie ze strumieniem audytu.');
+    es.close();
+  };
+
+  return {
+    id: () => currentId,
+    cancel: () => {
+      if (currentId) {
+        fetch(`/api/audit/${currentId}/cancel`, { method: 'POST' }).catch(() => {});
+      }
+      es.close();
+    },
+  };
+}
+
+export async function getHealth() {
+  try {
+    const r = await fetch('/api/health');
+    return await r.json();
+  } catch {
+    return { ok: false, renderAvailable: false };
+  }
+}

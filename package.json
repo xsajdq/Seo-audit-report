@@ -1,0 +1,26 @@
+{
+  "name": "seo-audit-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lokalne, potężne narzędzie do technicznego audytu SEO — działa w przeglądarce, uruchamiane lokalnie na Linux.",
+  "type": "module",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "postinstall": "npm --workspace client install && npm --workspace server install",
+    "dev": "concurrently -n server,client -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm --workspace server run dev",
+    "dev:client": "npm --workspace client run dev",
+    "build": "npm --workspace client run build",
+    "start": "npm --workspace server run start",
+    "audit:setup-browser": "npx playwright install chromium"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
