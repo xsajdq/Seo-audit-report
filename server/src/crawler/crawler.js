@@ -348,6 +348,7 @@ function serializePage(p) {
     bytes: p.response.bytes,
     contentType: p.response.contentType,
     redirectChain: p.response.redirectChain || [],
+    pagerank: p.pagerank ?? null,
     issues: p.issues,
     issueCounts: countSeverity(p.issues),
     render: p.render,
@@ -384,6 +385,15 @@ function serializePage(p) {
             lists: d.listCount,
             tables: d.tableCount,
             faqSchema: d.ldFlags.faqPage,
+            fluffCount: d.fluffCount,
+            entityCount: d.entityCount,
+            wordsPerSection: d.wordsPerSection,
+            authoritySources: (d.externalLinks || []).filter((l) => /\.(gov|edu)|wikipedia\.org/i.test(l.href)).length,
+          },
+          a11y: {
+            interactiveNoName: d.a11y.interactiveNoName,
+            inputsNoLabel: d.a11y.inputsNoLabel,
+            positiveTabindex: d.a11y.positiveTabindex,
           },
           local: {
             organization: d.ldFlags.organization,

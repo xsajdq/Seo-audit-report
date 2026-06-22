@@ -258,6 +258,32 @@ export function runChecks(page) {
     if (!/Article|FAQ|HowTo|Product|Recipe|Event/i.test(richTypes)) {
       add('notice', 'geo', 'Brak treściowego schema (Article/FAQ/HowTo…)', 'Dane strukturalne typu treściowego pomagają AI zrozumieć i zacytować zawartość.');
     }
+
+    // Wiarygodność źródeł — linki wychodzące do domen o wysokim autorytecie
+    const AUTHORITY = /\.(gov|edu|edu\.pl|gov\.pl|gob\.|ac\.uk|int)(\/|$)|\b(wikipedia\.org|who\.int|europa\.eu|nih\.gov|nasa\.gov|britannica\.com|reuters\.com|nature\.com|sciencedirect\.com|ncbi\.nlm\.nih\.gov)\b/i;
+    const authorityLinks = (data.externalLinks || []).filter((l) => AUTHORITY.test(l.href));
+    if (authorityLinks.length === 0) {
+      add('notice', 'geo', 'Brak linków do wiarygodnych źródeł', 'Brak linków wychodzących do domen o wysokim autorytecie (.gov/.edu, Wikipedia, znane portale) — AI chętniej cytuje treści powołujące się na źródła.');
+    } else if (authorityLinks.every((l) => l.nofollow)) {
+      add('notice', 'geo', 'Linki do źródeł oznaczone nofollow', 'Wszystkie linki do wiarygodnych źródeł mają nofollow — w kontekście cytowania rozważ dofollow.');
+    }
+
+    // RAG / chunking — zbyt długie sekcje między nagłówkami są źle wektoryzowane
+    if (data.wordCount >= 600 && data.sectionHeadings <= 1) {
+      add('warning', 'geo', 'Brak śródtytułów (treść nie pod RAG)', `Długa treść (${data.wordCount} słów) bez podziału na sekcje H2/H3 — systemy RAG źle ją wektoryzują.`);
+    } else if (data.wordsPerSection > 350) {
+      add('notice', 'geo', 'Zbyt długie sekcje (RAG/chunking)', `~${data.wordsPerSection} słów na sekcję — dodaj śródtytuły H2/H3 dla lepszej wektoryzacji przez LLM.`);
+    }
+
+    // AI-fluff — nasycenie generycznymi frazami obniża Information Gain
+    if (data.fluffCount >= 2) {
+      add('notice', 'geo', 'Generyczne frazy (AI-fluff)', `Wykryto ${data.fluffCount} pustych fraz typu „w dzisiejszym świecie" — obniżają Information Gain.`);
+    }
+
+    // Zagęszczenie encji — kompletność semantyczna (heurystyka nazw własnych)
+    if (data.wordCount >= 400 && data.entityDensity < 0.02) {
+      add('notice', 'geo', 'Niskie zagęszczenie encji', 'Mało rozpoznawalnych encji/nazw własnych względem długości tekstu — AI szuka kompletności semantycznej, nie tylko fraz.');
+    }
   }
 
   // ===== LOCAL / GEO — sygnały lokalne i geograficzne =====
@@ -285,6 +311,56 @@ export function runChecks(page) {
     if (!data.hasMapEmbed && (ld.localBusiness || ld.address)) {
       add('notice', 'local', 'Brak osadzonej mapy', 'Rozważ osadzenie mapy (Google Maps) na stronie kontaktowej/lokalizacji.');
     }
+  }
+
+  // ===== FORMATY OBRAZÓW (nowoczesne) =====
+  const legacyImages = (data.images || []).filter((i) => /\.(jpe?g|png)(\?|$)/i.test(i.src || '')).length;
+  if (legacyImages >= 3) {
+    add('notice', 'performance', 'Stare formaty obrazów (JPEG/PNG)', `${legacyImages} obrazów w formacie JPEG/PNG — rozważ WebP/AVIF dla mniejszego rozmiaru.`);
+  }
+  const lazyMissing = (data.images || []).filter((i) => i.src && i.loading !== 'lazy').length;
+  if ((data.images || []).length >= 8 && lazyMissing >= 5) {
+    add('notice', 'performance', 'Obrazy bez lazy-loading', `${lazyMissing} obrazów bez loading="lazy" — opóźnij ładowanie obrazów poza ekranem.`);
+  }
+
+  // ===== RESOURCE HINTS (priorytetyzacja zasobów) =====
+  const rh = data.resourceHints || {};
+  if (rh.preload > 6) {
+    add('warning', 'performance', 'Nadmiar tagów preload', `${rh.preload} zasobów z preload — zbyt wiele może zapchać wątek główny i opóźnić LCP.`);
+  }
+  if (rh.preconnect === 0 && data.externalLinkCount > 0 && (data.images || []).some((i) => /^https?:\/\//i.test(i.src) && !i.src.includes(new URL(response.finalUrl).hostname))) {
+    add('notice', 'performance', 'Brak preconnect do zewnętrznych źródeł', 'Strona ładuje zasoby z zewnętrznych domen bez preconnect/dns-prefetch.');
+  }
+
+  // ===== PAGINACJA =====
+  let paginated = false;
+  try {
+    const u = new URL(response.finalUrl);
+    paginated = /([?&](page|strona|p)=\d+)|\/(page|strona)\/\d+|\/\d+\/?$/i.test(u.pathname + u.search) && !/\/(19|20)\d{2}\/?$/.test(u.pathname);
+  } catch { /* noop */ }
+  if (paginated) {
+    if (!data.relNext && !data.relPrev) {
+      add('notice', 'indexability', 'Paginacja bez rel=next/prev', 'Strona stronicowana bez rel="next"/"prev" — mimo deprecjacji wciąż pomaga w crawlowaniu.');
+    }
+    const titleNum = data.title && /(strona|page|str\.?|—|-|\|)\s*\d+/i.test(data.title);
+    if (data.title && !titleNum) {
+      add('notice', 'meta', 'Paginacja bez numeru w tytule', 'Strona paginacji ma tytuł bez wskaźnika numeru (np. „— Strona 2") — ryzyko duplikacji title/description.');
+    }
+  }
+
+  // ===== DOSTĘPNOŚĆ (a11y) =====
+  const a = data.a11y || {};
+  if (a.interactiveNoName >= 1) {
+    add('warning', 'accessibility', 'Przyciski/linki bez dostępnej nazwy', `${a.interactiveNoName} elementów interaktywnych bez tekstu/aria-label (np. ikony) — niewidoczne dla czytników i agentów AI.`);
+  }
+  if (a.inputsNoLabel >= 1) {
+    add('warning', 'accessibility', 'Pola formularza bez etykiety', `${a.inputsNoLabel} pól bez powiązanej etykiety (label/aria-label).`);
+  }
+  if (a.positiveTabindex >= 1) {
+    add('notice', 'accessibility', 'Dodatni tabindex', `${a.positiveTabindex} elementów z tabindex>0 — psuje naturalną kolejność fokusu klawiatury.`);
+  }
+  if (a.imgRoleSvg >= 1) {
+    add('notice', 'accessibility', 'SVG role="img" bez etykiety', `${a.imgRoleSvg} grafik SVG bez aria-label — brak tekstu alternatywnego.`);
   }
 
   return issues;

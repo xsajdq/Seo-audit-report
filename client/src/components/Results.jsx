@@ -218,6 +218,16 @@ function SiteAnalysis({ result }) {
           </details>
         ))}
       </div>
+      {result.site.topPages && result.site.topPages.length > 0 && (
+        <>
+          <h3 style={{ marginTop: 24 }}>Najmocniejsze strony (wewnętrzny PageRank)</h3>
+          <ul className="kv">
+            {result.site.topPages.map((p, i) => (
+              <li key={i}><span>{p.url}</span><b>{p.pr}/100</b></li>
+            ))}
+          </ul>
+        </>
+      )}
       <h3 style={{ marginTop: 24 }}>Sitemap & robots</h3>
       <ul className="kv">
         <li><span>robots.txt</span><b>{result.robots.exists ? result.robots.url : 'nie znaleziono'}</b></li>

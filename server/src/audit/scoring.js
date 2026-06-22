@@ -16,6 +16,7 @@ export const CATEGORIES = {
   geo: 'GEO (AI / silniki generatywne)',
   local: 'Local / Geo SEO',
   architecture: 'Architektura / linkowanie',
+  accessibility: 'Dostępność (a11y)',
 };
 
 export function scoreAudit(pages, siteIssues = []) {

@@ -150,6 +150,41 @@ export function extractPageData(html, baseUrl) {
   const manifest = $('link[rel="manifest" i]').attr('href') || null;
   const ampHref = $('link[rel="amphtml" i]').attr('href') || null;
 
+  // --- Resource hints (priorytetyzacja zasobów) ---
+  const resourceHints = {
+    preload: $('link[rel="preload" i]').length,
+    preconnect: $('link[rel="preconnect" i]').length,
+    prefetch: $('link[rel="prefetch" i]').length,
+    dnsPrefetch: $('link[rel="dns-prefetch" i]').length,
+    preloadLcpImage: $('link[rel="preload" i][as="image"]').length > 0,
+  };
+
+  // --- Dostępność (a11y) — sygnały statyczne z DOM ---
+  // Linki/przyciski bez dostępnej nazwy (tekst / aria-label / title / obraz z alt)
+  let interactiveNoName = 0;
+  $('a[href], button').each((_, el) => {
+    const $el = $(el);
+    const text = $el.text().replace(/\s+/g, ' ').trim();
+    const aria = $el.attr('aria-label') || $el.attr('title') || $el.attr('aria-labelledby');
+    const imgAlt = $el.find('img[alt]').filter((_, im) => ($(im).attr('alt') || '').trim()).length > 0;
+    if (!text && !aria && !imgAlt) interactiveNoName++;
+  });
+  // Pola formularza bez etykiety
+  let inputsNoLabel = 0;
+  $('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), select, textarea').each((_, el) => {
+    const $el = $(el);
+    const id = $el.attr('id');
+    const hasLabel = (id && $(`label[for="${id}"]`).length > 0) || $el.attr('aria-label') || $el.attr('aria-labelledby') || $el.attr('title') || $el.attr('placeholder');
+    if (!hasLabel) inputsNoLabel++;
+  });
+  const a11y = {
+    interactiveNoName,
+    inputsNoLabel,
+    hasLangAttr: !!$('html').attr('lang'),
+    positiveTabindex: $('[tabindex]').filter((_, el) => Number($(el).attr('tabindex')) > 0).length,
+    imgRoleSvg: $('svg[role="img"]:not([aria-label]):not([aria-labelledby])').length,
+  };
+
   // --- GEO (Generative Engine Optimization) / struktura dla AI ---
   const semantic = {
     article: $('article').length,
@@ -194,6 +229,40 @@ export function extractPageData(html, baseUrl) {
   const hasPhoneInText = telLinks > 0 || /(\+?\d[\d\s().-]{7,}\d)/.test(bodyText);
   const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
   const textRatio = html.length > 0 ? bodyText.length / html.length : 0;
+
+  // --- AI-fluff: nasycenie generycznymi frazami (obniża Information Gain) ---
+  const FLUFF_PATTERNS = [
+    /w dzisiejszym (dynamicznie )?(zmieniaj[aą]cym si[eę] )?świecie/gi,
+    /w dzisiejszych czasach/gi,
+    /w erze cyfrow[ej]/gi,
+    /nie da si[eę] ukry[ćc]/gi,
+    /warto (jednak )?(pami[eę]ta[ćc]|zauważy[ćc]|podkre[śs]li[ćc]|wiedzie[ćc])/gi,
+    /jak (powszechnie )?wiadomo/gi,
+    /bez (dwóch|w[aą]tpienia) zdań?/gi,
+    /odgrywa(j[aą])? (kluczow[aą]|istotn[aą]|ważn[aą]) rol[eę]/gi,
+    /w (dynamicznym|szybko zmieniaj[aą]cym si[eę]) (świecie|środowisku)/gi,
+    /in today'?s (fast-paced |digital |ever-changing )?world/gi,
+    /it'?s (important|worth) (to note|noting|mentioning)/gi,
+    /when it comes to/gi,
+    /at the end of the day/gi,
+    /plays? a (crucial|key|vital|important) role/gi,
+    /in the (ever-changing|modern|digital) (world|landscape|era)/gi,
+  ];
+  let fluffCount = 0;
+  for (const re of FLUFF_PATTERNS) {
+    const m = bodyText.match(re);
+    if (m) fluffCount += m.length;
+  }
+
+  // --- Zagęszczenie encji (heurystyka): unikalne nazwy własne (wielowyrazowe z wielkiej litery) ---
+  const entityMatches = bodyText.match(/\b[A-ZĄĆĘŁŃÓŚŻŹ][a-ząćęłńóśżź]+(?:\s+[A-ZĄĆĘŁŃÓŚŻŹ][a-ząćęłńóśżź]+){0,3}\b/g) || [];
+  const entitySet = new Set(entityMatches.map((e) => e.toLowerCase()));
+  const entityCount = entitySet.size;
+  const entityDensity = wordCount > 0 ? entityCount / wordCount : 0;
+
+  // --- RAG chunking: średnia liczba słów na sekcję (H2/H3) ---
+  const sectionHeadings = headings.h2.length + headings.h3.length;
+  const wordsPerSection = sectionHeadings > 0 ? Math.round(wordCount / (sectionHeadings + 1)) : wordCount;
   // Próbka treści do dopasowania słów kluczowych (ograniczona, by nie rozdmuchać payloadu).
   const headingsText = [...headings.h1, ...headings.h2, ...headings.h3].join(' . ');
   const bodySample = bodyText.slice(0, 1500);
@@ -250,6 +319,13 @@ export function extractPageData(html, baseUrl) {
     hasAuthor,
     hasPublishDate,
     hasModifiedDate,
+    fluffCount,
+    entityCount,
+    entityDensity,
+    wordsPerSection,
+    sectionHeadings,
+    resourceHints,
+    a11y,
     // Local / Geo
     hasGeoMeta,
     geoMeta: { geoRegion, geoPlacename, geoPosition, icbm },

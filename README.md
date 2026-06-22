@@ -112,7 +112,8 @@ client/   React + Vite
 - [x] **Faza 5b** — kategorie **GEO (optymalizacja pod AI)** i **Local/Geo SEO** + check `llms.txt`
 - [x] **Faza 5c** — walidacja Schema.org wg typów + klasyfikacja intencji fraz + TBT/INP
 - [x] **Faza 5d** — inteligencja cross-page (graf linków, broken/redirect internal, sitemap↔crawl, near-duplicate, click depth, kanonikalizacja domeny, anchor text)
-- [ ] **Faza 6** — analiza konkurencji i luki frazowe/treściowe (skan konkurentów), pełny Lighthouse, eksport PDF, analiza logów serwera
+- [x] **Faza 5e** — AI-readiness (outbound authority, RAG chunking, AI-fluff, entity density), a11y (ARIA/etykiety/tabindex), hreflang return tags, łańcuchy canonical, paginacja, formaty obrazów (WebP/AVIF), resource hints, kanibalizacja fraz, wewnętrzny PageRank
+- [ ] **Faza 6** — analiza konkurencji i luki frazowe/treściowe (skan konkurentów), integracja CrUX/Lighthouse, eksport PDF, analiza logów serwera, wizualizacja architektury
 
 ## Porównanie z czołowymi narzędziami
 

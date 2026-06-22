@@ -19,6 +19,7 @@ export default function PageDetail({ page, onClose }) {
             <Meta label="TTFB" value={page.ttfb ? `${page.ttfb} ms` : '—'} />
             <Meta label="Rozmiar" value={page.bytes ? `${(page.bytes / 1024).toFixed(1)} KB` : '—'} />
             <Meta label="Głębokość" value={page.depth} />
+            <Meta label="Wewn. PageRank" value={page.pagerank != null ? `${page.pagerank}/100` : '—'} />
             <Meta label="Słów" value={s.wordCount ?? '—'} />
           </div>
 
@@ -65,6 +66,19 @@ export default function PageDetail({ page, onClose }) {
                 <Signal ok={s.geo.questionHeadings > 0 || s.geo.faqSchema} label="Pytania / FAQ" />
                 <Signal ok={s.geo.lists > 0 || s.geo.tables > 0} label="Listy / tabele" />
                 <Signal ok={s.geo.faqSchema} label="FAQ schema" />
+                <Signal ok={s.geo.authoritySources > 0} label="Linki do źródeł" />
+                <Signal ok={s.geo.fluffCount === 0} label="Bez AI-fluff" />
+              </div>
+            </>
+          )}
+
+          {s.a11y && (
+            <>
+              <h4>Dostępność (a11y)</h4>
+              <div className="signal-grid">
+                <Signal ok={s.a11y.interactiveNoName === 0} label="Przyciski/linki z nazwą" />
+                <Signal ok={s.a11y.inputsNoLabel === 0} label="Pola z etykietą" />
+                <Signal ok={s.a11y.positiveTabindex === 0} label="Brak dodatniego tabindex" />
               </div>
             </>
           )}
