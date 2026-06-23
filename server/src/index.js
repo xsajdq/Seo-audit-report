@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { runAudit, CrawlController } from './crawler/crawler.js';
 import { isRenderAvailable, closeBrowser } from './render/renderer.js';
-import { toCSV, toHTMLReport, buildChecklistXlsx } from './report/exporter.js';
+import { toCSV, toHTMLReport, buildChecklistXlsx, buildContentChecklistXlsx } from './report/exporter.js';
 import { matchKeywords } from './keyword/keywordMatcher.js';
 import { buildKnowledgeGraph } from './knowledge/topicGraph.js';
 import { analyzeContentGap } from './knowledge/contentGap.js';
@@ -198,6 +198,12 @@ app.get('/api/result/:id/export', (req, res) => {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="checklista-${base}.xlsx"`);
     res.send(buildChecklistXlsx(r, kg));
+  } else if (format === 'content') {
+    let kg = null;
+    try { kg = buildKnowledgeGraph(r.pages, { label: host }); } catch { /* graf opcjonalny */ }
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="checklista-tresci-${base}.xlsx"`);
+    res.send(buildContentChecklistXlsx(r, kg));
   } else {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${base}.json"`);

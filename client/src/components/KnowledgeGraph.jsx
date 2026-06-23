@@ -80,6 +80,8 @@ export default function KnowledgeGraph({ resultId }) {
         </div>
       )}
 
+      <AllContentList topics={data.topics} resultId={resultId} onAnalyze={setAnalyzeUrl} />
+
       <h4 style={{ marginTop: 20 }}>Tematy i pokrycie</h4>
       <div className="topic-list">
         {data.topics.map((t) => (
@@ -118,6 +120,64 @@ export default function KnowledgeGraph({ resultId }) {
     </div>
   );
 }
+
+function AllContentList({ topics, resultId, onAnalyze }) {
+  const all = React.useMemo(() => {
+    const out = [];
+    for (const t of topics) for (const p of t.pages) out.push({ ...p, topic: t.label });
+    return out;
+  }, [topics]);
+  const types = React.useMemo(() => {
+    const m = {};
+    for (const p of all) m[p.type] = (m[p.type] || 0) + 1;
+    return m;
+  }, [all]);
+  const [filter, setFilter] = useState('all');
+  const [q, setQ] = useState('');
+
+  const list = all
+    .filter((p) => (filter === 'all' || p.type === filter) && p.title.toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => (a.completeness ?? 101) - (b.completeness ?? 101));
+
+  return (
+    <div className="all-content">
+      <div className="all-content-head">
+        <h4>Wszystkie wpisy i usługi ({all.length})</h4>
+        <div className="dl-buttons">
+          <a className="btn ghost tiny" href={`/api/result/${resultId}/export?format=content`}>⬇ Checklista treści (XLSX)</a>
+        </div>
+      </div>
+      <div className="filter-row">
+        <input className="search" placeholder="Filtruj po tytule…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <button className={`chip ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Wszystkie ({all.length})</button>
+        {Object.entries(types).map(([t, n]) => (
+          <button key={t} className={`chip ${filter === t ? 'active' : ''}`} onClick={() => setFilter(t)}>
+            {TYPE_NAMES[t] || t} ({n})
+          </button>
+        ))}
+      </div>
+      <div className="table-wrap">
+        <table className="pages-table">
+          <thead><tr><th>Typ</th><th>Tytuł</th><th>Temat</th><th>Słów</th><th>Kompletność</th><th></th></tr></thead>
+          <tbody>
+            {list.map((p, i) => (
+              <tr key={i}>
+                <td><span className={`type-badge t-${p.type}`}>{p.typeLabel}</span></td>
+                <td className="title-cell"><a href={p.url} target="_blank" rel="noreferrer">{p.title}</a></td>
+                <td className="muted">{p.topic}</td>
+                <td>{p.words}</td>
+                <td>{p.completeness != null ? <span className={`compl ${complCls(p.completeness)}`}>{p.completeness}%</span> : '—'}</td>
+                <td><button className="btn ghost tiny" onClick={() => onAnalyze(p.url)}>Analizuj</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+const TYPE_NAMES = { blog: 'Wpisy', service: 'Usługi', product: 'Produkty', category: 'Kategorie', location: 'Lokalizacje', homepage: 'Główna', page: 'Inne' };
 
 function CompetitorGap({ resultId }) {
   const [domains, setDomains] = useState('');

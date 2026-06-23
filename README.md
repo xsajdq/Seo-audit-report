@@ -45,7 +45,9 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - **klastrowanie tematyczne** (TF-IDF + cosine) i interaktywna **wizualizacja grafu** (tematy + linkowanie wewnętrzne)
   - **pokrycie i luki**: płytkie tematy, brak strony filarowej (pillar), słaby interlinking klastra
   - **audyt kompletności wpisów** — czy wpis pokrywa 100% podtematów oczekiwanych w danym temacie (profil tematu + brakujące podtematy i pytania per wpis)
+  - **lista wszystkich wpisów i usług** w grafie wiedzy — filtr po typie, sortowanie wg kompletności, podgląd/analiza każdej strony
   - **głęboka analiza pojedynczej strony (wpis/usługa)** — wybierasz stronę, aplikacja pobiera jej treść i pokazuje brakujące **encje, frazy, podtematy i pytania** + rekomendacje; opcjonalne wzbogacenie darmowym API **Wikipedia PL + ConceptNet** (bez klucza, z lokalnym fallbackiem)
+  - **checklista treści .xlsx** — lista wpisów/usług z kompletnością, brakującymi podtematami (odpowiedziami) i pytaniami do dodania, z kolumną statusu
   - **analiza luk vs konkurencja** — podajesz domeny konkurentów, aplikacja skanuje ich blogi i wskazuje tematy, których u Ciebie brakuje lub są słabiej rozwinięte (z listą podtematów do pokrycia)
   - **eksport do raportu HTML** — graf, pokrycie tematów, kompletność wpisów i luki w drukowalnym raporcie (PDF)
 

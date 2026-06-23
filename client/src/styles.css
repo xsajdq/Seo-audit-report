@@ -325,6 +325,9 @@ code { background: #f1f5f9; padding: 1px 6px; border-radius: 5px; font-size: 0.9
 .term-chip.bad { background: #fee2e2; color: #991b1b; }
 .term-chip.warn { background: #fef3c7; color: #92400e; }
 .q-list li { color: #334155; }
+.all-content { margin: 20px 0; }
+.all-content-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.dl-buttons { display: flex; gap: 8px; }
 
 @media (max-width: 720px) {
   .overview-grid { grid-template-columns: 1fr; }

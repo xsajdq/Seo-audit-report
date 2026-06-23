@@ -130,6 +130,66 @@ export function toCSV(result) {
     .join('\n');
 }
 
+// Prosta checklista treści (.xlsx): lista wszystkich wpisów i usług z informacją,
+// jakie podtematy (odpowiedzi) i pytania muszą się jeszcze pojawić.
+const TYPE_ORDER = { blog: 0, service: 1, product: 2, category: 3, location: 4, homepage: 5, page: 6 };
+export function buildContentChecklistXlsx(result, kg) {
+  const STATUS_OPTIONS = ['Do zrobienia', 'W trakcie', 'Gotowe'];
+  const rows = [[
+    'Typ', 'Tytuł', 'URL', 'Temat', 'Kompletność %', 'Słów',
+    'Brakujące podtematy (odpowiedzi do pokrycia)', 'Pytania do dodania', 'Status', 'Notatki',
+  ]];
+
+  const flat = [];
+  if (kg && kg.topics) {
+    for (const t of kg.topics) {
+      for (const p of t.pages) {
+        flat.push({
+          type: p.type, typeLabel: p.typeLabel, title: p.title, url: p.url, topic: t.label,
+          completeness: p.completeness, words: p.words,
+          missing: p.missing || [], missingQuestions: p.missingQuestions || [],
+        });
+      }
+    }
+  }
+  // sortuj: typ (wpisy, usługi…), potem najmniej kompletne najpierw
+  flat.sort((a, b) =>
+    (TYPE_ORDER[a.type] ?? 9) - (TYPE_ORDER[b.type] ?? 9) ||
+    (a.completeness ?? 101) - (b.completeness ?? 101));
+
+  for (const p of flat) {
+    rows.push([
+      p.typeLabel, p.title, p.url, p.topic,
+      p.completeness ?? '—', p.words ?? '',
+      p.missing.join(', '),
+      p.missingQuestions.join('  |  '),
+      '', '',
+    ]);
+  }
+
+  const sheets = [{
+    name: 'Wpisy i usługi', autofilter: true,
+    columns: [{ width: 18 }, { width: 42 }, { width: 48 }, { width: 26 }, { width: 13 }, { width: 8 }, { width: 50 }, { width: 50 }, { width: 14 }, { width: 28 }],
+    rows,
+    statusValidation: { col: 8, lastRow: rows.length, options: STATUS_OPTIONS },
+  }];
+
+  // legenda typów
+  sheets.push({
+    name: 'Legenda', columns: [{ width: 22 }, { width: 60 }],
+    rows: [
+      ['Jak korzystać', ''],
+      ['Typ', 'Filtruj kolumnę „Typ", aby wybrać wpisy blogowe lub usługi.'],
+      ['Kompletność %', 'Im niżej, tym więcej treści brakuje względem tematu (klastra).'],
+      ['Brakujące podtematy', 'Zagadnienia/odpowiedzi, które warto dodać do treści.'],
+      ['Pytania do dodania', 'Pytania (sekcje H2/FAQ), na które strona powinna odpowiedzieć.'],
+      ['Status', 'Lista rozwijana: Do zrobienia / W trakcie / Gotowe.'],
+    ],
+  });
+
+  return buildXlsx(sheets);
+}
+
 export function toHTMLReport(result, kg = null) {
   const { summary, meta, site } = result;
   const sevColor = { error: '#dc2626', warning: '#d97706', notice: '#0891b2' };
