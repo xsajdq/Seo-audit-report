@@ -33,7 +33,7 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - jakość anchor textów (puste/generyczne), przekierowania tymczasowe (302/307), konflikt noindex+canonical
 - **Render JavaScript (opcjonalnie)** — Playwright/Chromium: render stron na JS + **Core Web Vitals** (LCP, FCP, CLS, TBT jako proxy INP), wykrywanie treści zależnej od JS.
 - **Scoring 0–100** z oceną A–F i wynikami per kategoria.
-- **Eksport**: raport HTML (do druku/PDF), CSV, JSON.
+- **Eksport**: raport HTML (do druku/PDF), **checklista wdrożeniowa .xlsx** (Excel / Arkusze Google — priorytety, kolumna statusu z listą rozwijaną, arkusze: Podsumowanie / Checklista / Strony / Kompletność treści), CSV, JSON.
 - **Live progress** przez SSE — widzisz skanowanie na żywo.
 - **Dopasowanie słów kluczowych do podstron** — wklejasz listę fraz, a narzędzie:
   - dobiera najtrafniejszą istniejącą podstronę (algorytm ważony po polach: URL/title/H1/nagłówki/opis/treść + lekki polski stemmer),

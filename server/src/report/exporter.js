@@ -1,5 +1,106 @@
-// Eksport wyników audytu do CSV oraz samodzielnego raportu HTML.
+// Eksport wyników audytu do CSV, raportu HTML oraz checklisty .xlsx.
 import { CATEGORIES } from '../audit/scoring.js';
+import { buildXlsx } from './xlsx.js';
+
+const PRIORITY = { error: 'Wysoki', warning: 'Średni', notice: 'Niski' };
+const STATUS_OPTIONS = ['Do zrobienia', 'W trakcie', 'Zrobione'];
+
+// Buduje skoroszyt .xlsx z checklistą wdrożeniową po audycie.
+export function buildChecklistXlsx(result, kg = null) {
+  const { summary, meta, site } = result;
+
+  // --- Arkusz: Podsumowanie ---
+  const summaryRows = [
+    ['Audyt SEO — podsumowanie', ''],
+    ['Adres', meta.startUrl],
+    ['Wygenerowano', new Date(meta.generatedAt).toLocaleString('pl-PL')],
+    ['Wynik ogólny', summary.score],
+    ['Ocena', summary.grade],
+    ['Przeskanowane strony', summary.totals.pages],
+    ['Błędy', summary.totals.error],
+    ['Ostrzeżenia', summary.totals.warning],
+    ['Uwagi', summary.totals.notice],
+    ['', ''],
+    ['Kategoria', 'Wynik', 'Błędy', 'Ostrzeżenia', 'Uwagi'],
+    ...Object.values(summary.categories).map((c) => [c.label, c.score, c.errors, c.warnings, c.notices]),
+  ];
+
+  // --- Arkusz: Checklista (zagregowane problemy, priorytetyzowane) ---
+  const agg = new Map();
+  const consider = [];
+  for (const p of result.pages) for (const i of p.issues) consider.push({ ...i, url: p.url });
+  for (const i of result.siteIssues || []) consider.push({ ...i, url: '(cała witryna)' });
+  for (const i of consider) {
+    const k = `${i.severity}|${i.category}|${i.title}`;
+    if (!agg.has(k)) agg.set(k, { ...i, count: 0, pages: [] });
+    const e = agg.get(k);
+    e.count++;
+    if (e.pages.length < 5 && i.url) e.pages.push(i.url);
+  }
+  const order = { error: 0, warning: 1, notice: 2 };
+  const issues = [...agg.values()].sort((a, b) => order[a.severity] - order[b.severity] || b.count - a.count);
+
+  const checklistHeader = ['Priorytet', 'Waga', 'Kategoria', 'Co poprawić', 'Szczegóły', 'Liczba stron', 'Przykładowe URL-e', 'Status', 'Notatki'];
+  const checklistRows = [checklistHeader, ...issues.map((i) => [
+    PRIORITY[i.severity] || '—',
+    i.severity,
+    CATEGORIES[i.category] || i.category,
+    i.title,
+    i.detail || '',
+    i.count,
+    (i.pages || []).join('\n'),
+    '',
+    '',
+  ])];
+
+  // --- Arkusz: Strony ---
+  const pagesHeader = ['URL', 'Status', 'Tytuł', 'H1', 'Słów', 'Błędy', 'Ostrzeżenia', 'Uwagi', 'Status realizacji'];
+  const pagesRows = [pagesHeader, ...result.pages
+    .slice()
+    .sort((a, b) => (b.issueCounts.error * 100 + b.issueCounts.warning * 10) - (a.issueCounts.error * 100 + a.issueCounts.warning * 10))
+    .map((p) => [
+      p.url, p.status, p.seo?.title || '', p.seo?.h1Count ?? '', p.seo?.wordCount ?? '',
+      p.issueCounts.error, p.issueCounts.warning, p.issueCounts.notice, '',
+    ])];
+
+  const sheets = [
+    { name: 'Podsumowanie', columns: [{ width: 28 }, { width: 14 }, { width: 12 }, { width: 12 }, { width: 12 }], rows: summaryRows },
+    {
+      name: 'Checklista', autofilter: true,
+      columns: [{ width: 10 }, { width: 10 }, { width: 22 }, { width: 40 }, { width: 50 }, { width: 12 }, { width: 45 }, { width: 14 }, { width: 30 }],
+      rows: checklistRows,
+      statusValidation: { col: 7, lastRow: checklistRows.length, options: STATUS_OPTIONS },
+    },
+    {
+      name: 'Strony', autofilter: true,
+      columns: [{ width: 50 }, { width: 8 }, { width: 40 }, { width: 6 }, { width: 8 }, { width: 8 }, { width: 11 }, { width: 8 }, { width: 16 }],
+      rows: pagesRows,
+      statusValidation: { col: 8, lastRow: pagesRows.length, options: STATUS_OPTIONS },
+    },
+  ];
+
+  // --- Arkusz: Kompletność treści (z grafu wiedzy) ---
+  if (kg && kg.topics) {
+    const complRows = [['Strona', 'Temat', 'Kompletność %', 'Brakujące podtematy', 'Brakujące pytania', 'Status']];
+    for (const t of kg.topics) {
+      for (const p of t.pages) {
+        if (p.completeness != null && p.completeness < 100) {
+          complRows.push([p.title || p.url, t.label, p.completeness, (p.missing || []).join(', '), (p.missingQuestions || []).join(' | '), '']);
+        }
+      }
+    }
+    if (complRows.length > 1) {
+      sheets.push({
+        name: 'Kompletność treści', autofilter: true,
+        columns: [{ width: 45 }, { width: 28 }, { width: 14 }, { width: 50 }, { width: 40 }, { width: 14 }],
+        rows: complRows,
+        statusValidation: { col: 5, lastRow: complRows.length, options: STATUS_OPTIONS },
+      });
+    }
+  }
+
+  return buildXlsx(sheets);
+}
 
 export function toCSV(result) {
   const rows = [

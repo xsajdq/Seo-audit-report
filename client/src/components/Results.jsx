@@ -22,6 +22,7 @@ export default function Results({ result, resultId, onReset }) {
         </div>
         <div className="actions">
           <a className="btn ghost" href={`/api/result/${resultId}/export?format=html`} target="_blank" rel="noreferrer">Raport HTML</a>
+          <a className="btn ghost" href={`/api/result/${resultId}/export?format=xlsx`}>Checklista XLSX</a>
           <a className="btn ghost" href={`/api/result/${resultId}/export?format=csv`}>CSV</a>
           <a className="btn ghost" href={`/api/result/${resultId}/export?format=json`}>JSON</a>
           <button className="btn" onClick={onReset}>Nowy audyt</button>
