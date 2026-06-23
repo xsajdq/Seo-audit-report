@@ -133,6 +133,7 @@ export default function PageDetail({ page, onClose }) {
                 <div>
                   <b>{i.title}</b>
                   <p>{i.detail}</p>
+                  {i.fix && <p className="issue-fix">✅ {i.fix}</p>}
                 </div>
               </div>
             ))}

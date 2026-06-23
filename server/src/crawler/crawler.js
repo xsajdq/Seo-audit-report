@@ -7,6 +7,7 @@ import { extractPageData } from '../audit/extract.js';
 import { runChecks } from '../audit/checks.js';
 import { analyzeSite } from '../audit/siteAudit.js';
 import { scoreAudit } from '../audit/scoring.js';
+import { recommendationFor } from '../audit/recommendations.js';
 import { renderPage } from '../render/renderer.js';
 
 export class CrawlController {
@@ -225,7 +226,7 @@ export async function runAudit(opts, emit = () => {}, controller = new CrawlCont
     sitemaps,
     summary,
     site: site.stats,
-    siteIssues: site.issues,
+    siteIssues: site.issues.map((i) => ({ ...i, fix: recommendationFor(i) })),
     pages: pages.map(serializePage),
   };
 
@@ -358,7 +359,7 @@ function serializePage(p) {
     contentType: p.response.contentType,
     redirectChain: p.response.redirectChain || [],
     pagerank: p.pagerank ?? null,
-    issues: p.issues,
+    issues: p.issues.map((i) => ({ ...i, fix: recommendationFor(i) })),
     issueCounts: countSeverity(p.issues),
     render: p.render,
     seo: d

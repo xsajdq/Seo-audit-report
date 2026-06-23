@@ -129,6 +129,7 @@ function IssuesList({ issues, onSelectPage, pages }) {
             </summary>
             <div className="issue-body">
               <p>{i.detail}</p>
+              {i.fix && <p className="issue-fix"><b>✅ Jak naprawić:</b> {i.fix}</p>}
               <ul className="issue-pages">
                 {i.pages.slice(0, 12).map((u, k) => {
                   const p = pages.find((pp) => pp.url === u);

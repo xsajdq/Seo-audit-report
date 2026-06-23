@@ -32,7 +32,8 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - **kanonikalizacja domeny**: http→https, spójność www/non-www
   - jakość anchor textów (puste/generyczne), przekierowania tymczasowe (302/307), konflikt noindex+canonical
 - **Render JavaScript (opcjonalnie)** — Playwright/Chromium: render stron na JS + **Core Web Vitals** (LCP, FCP, CLS, TBT jako proxy INP), wykrywanie treści zależnej od JS.
-- **Scoring 0–100** z oceną A–F i wynikami per kategoria.
+- **Scoring 0–100** z oceną A–F: wynik ogólny to ważona średnia kategorii (realistyczny, spójny — nie zaniża), wyniki per kategoria z łagodną krzywą.
+- **Podpowiedzi „jak naprawić"** przy każdym problemie (technicznie i contentowo) — widoczne w aplikacji, raporcie HTML i checkliście XLSX.
 - **Eksport**: raport HTML (do druku/PDF), **checklista wdrożeniowa .xlsx** (Excel / Arkusze Google — priorytety, kolumna statusu z listą rozwijaną, arkusze: Podsumowanie / Checklista / Strony / Kompletność treści), CSV, JSON.
 - **Live progress** przez SSE — widzisz skanowanie na żywo.
 - **Dopasowanie słów kluczowych do podstron** — wklejasz listę fraz, a narzędzie:

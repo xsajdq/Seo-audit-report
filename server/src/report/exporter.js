@@ -40,12 +40,13 @@ export function buildChecklistXlsx(result, kg = null) {
   const order = { error: 0, warning: 1, notice: 2 };
   const issues = [...agg.values()].sort((a, b) => order[a.severity] - order[b.severity] || b.count - a.count);
 
-  const checklistHeader = ['Priorytet', 'Waga', 'Kategoria', 'Co poprawić', 'Szczegóły', 'Liczba stron', 'Przykładowe URL-e', 'Status', 'Notatki'];
+  const checklistHeader = ['Priorytet', 'Waga', 'Kategoria', 'Co poprawić', 'Jak naprawić', 'Szczegóły', 'Liczba stron', 'Przykładowe URL-e', 'Status', 'Notatki'];
   const checklistRows = [checklistHeader, ...issues.map((i) => [
     PRIORITY[i.severity] || '—',
     i.severity,
     CATEGORIES[i.category] || i.category,
     i.title,
+    i.fix || '',
     i.detail || '',
     i.count,
     (i.pages || []).join('\n'),
@@ -67,9 +68,9 @@ export function buildChecklistXlsx(result, kg = null) {
     { name: 'Podsumowanie', columns: [{ width: 28 }, { width: 14 }, { width: 12 }, { width: 12 }, { width: 12 }], rows: summaryRows },
     {
       name: 'Checklista', autofilter: true,
-      columns: [{ width: 10 }, { width: 10 }, { width: 22 }, { width: 40 }, { width: 50 }, { width: 12 }, { width: 45 }, { width: 14 }, { width: 30 }],
+      columns: [{ width: 10 }, { width: 9 }, { width: 20 }, { width: 36 }, { width: 55 }, { width: 45 }, { width: 11 }, { width: 40 }, { width: 14 }, { width: 26 }],
       rows: checklistRows,
-      statusValidation: { col: 7, lastRow: checklistRows.length, options: STATUS_OPTIONS },
+      statusValidation: { col: 8, lastRow: checklistRows.length, options: STATUS_OPTIONS },
     },
     {
       name: 'Strony', autofilter: true,
@@ -218,7 +219,7 @@ export function toHTMLReport(result, kg = null) {
   const issueRows = issuesSorted
     .map(
       (i) =>
-        `<tr><td><span class="badge" style="background:${sevColor[i.severity]}">${i.severity}</span></td><td>${esc(i.title)}</td><td>${CATEGORIES[i.category] || i.category}</td><td style="text-align:center">${i.count}</td></tr>`
+        `<tr><td><span class="badge" style="background:${sevColor[i.severity]}">${i.severity}</span></td><td>${esc(i.title)}</td><td style="color:#14532d">${esc(i.fix || '')}</td><td>${CATEGORIES[i.category] || i.category}</td><td style="text-align:center">${i.count}</td></tr>`
     )
     .join('');
 
@@ -262,7 +263,7 @@ td a{color:#2563eb;text-decoration:none} h2{font-size:18px;margin:24px 0 12px}
 <h2>Wyniki wg kategorii</h2>
 <table><thead><tr><th>Kategoria</th><th>Wynik</th><th>Błędy</th><th>Ostrzeżenia</th><th>Uwagi</th></tr></thead><tbody>${catRows}</tbody></table>
 <h2>Najczęstsze problemy</h2>
-<table><thead><tr><th>Waga</th><th>Problem</th><th>Kategoria</th><th>Wystąpień</th></tr></thead><tbody>${issueRows}</tbody></table>
+<table><thead><tr><th>Waga</th><th>Problem</th><th>Jak naprawić</th><th>Kategoria</th><th>Wystąpień</th></tr></thead><tbody>${issueRows}</tbody></table>
 ${kgSection(kg, esc)}
 <h2>Strony (${result.pages.length})</h2>
 <table><thead><tr><th>URL</th><th>Status</th><th>Tytuł</th><th>H1</th><th>Słów</th><th>E</th><th>W</th><th>N</th></tr></thead><tbody>${pageRows}</tbody></table>

@@ -328,6 +328,7 @@ code { background: #f1f5f9; padding: 1px 6px; border-radius: 5px; font-size: 0.9
 .all-content { margin: 20px 0; }
 .all-content-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
 .dl-buttons { display: flex; gap: 8px; }
+.issue-fix { background: #f0fdf4; border-left: 3px solid #16a34a; padding: 6px 10px; border-radius: 6px; font-size: 13px; margin: 6px 0 0; color: #14532d; }
 
 @media (max-width: 720px) {
   .overview-grid { grid-template-columns: 1fr; }
