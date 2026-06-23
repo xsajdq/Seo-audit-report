@@ -17,6 +17,7 @@ export const CATEGORIES = {
   local: 'Local / Geo SEO',
   architecture: 'Architektura / linkowanie',
   accessibility: 'Dostępność (a11y)',
+  usability: 'Użyteczność (UX)',
 };
 
 export function scoreAudit(pages, siteIssues = []) {

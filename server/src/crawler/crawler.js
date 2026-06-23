@@ -180,6 +180,15 @@ export async function runAudit(opts, emit = () => {}, controller = new CrawlCont
   const domainIssues = await checkDomainCanonicalization(origin);
   site.issues.push(...domainIssues);
 
+  // Soft-404: nieistniejący URL powinien zwracać 404/410, nie 200
+  try {
+    const fakeUrl = new URL(`/nieistniejaca-strona-${Math.random().toString(36).slice(2, 10)}`, origin).href;
+    const fake = await fetchUrl(fakeUrl, { timeout: 8000 });
+    if (fake.status >= 200 && fake.status < 300) {
+      site.issues.push({ severity: 'warning', category: 'indexability', title: 'Soft 404 (błędny URL zwraca 200)', detail: 'Nieistniejący adres zwraca status 200 zamiast 404/410 — Google może indeksować puste/błędne strony.' });
+    }
+  } catch { /* sieć — pomiń */ }
+
   // GEO na poziomie witryny: llms.txt + spójność encji (sameAs/Organization)
   if (!llmsTxt.exists) {
     site.issues.push({
@@ -394,6 +403,17 @@ function serializePage(p) {
             interactiveNoName: d.a11y.interactiveNoName,
             inputsNoLabel: d.a11y.inputsNoLabel,
             positiveTabindex: d.a11y.positiveTabindex,
+          },
+          ux: {
+            readability: d.readability,
+            avgSentenceLength: d.avgSentenceLength,
+            readingTimeMin: d.readingTimeMin,
+            hasBreadcrumb: d.hasBreadcrumb,
+            hasSearch: d.hasSearch,
+            hasFavicon: d.hasFavicon,
+            headSyncScripts: d.renderBlocking.headSyncScripts,
+            stylesheets: d.renderBlocking.stylesheets,
+            statCount: d.statCount,
           },
           local: {
             organization: d.ldFlags.organization,

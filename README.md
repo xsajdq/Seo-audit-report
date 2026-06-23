@@ -113,6 +113,7 @@ client/   React + Vite
 - [x] **Faza 5c** — walidacja Schema.org wg typów + klasyfikacja intencji fraz + TBT/INP
 - [x] **Faza 5d** — inteligencja cross-page (graf linków, broken/redirect internal, sitemap↔crawl, near-duplicate, click depth, kanonikalizacja domeny, anchor text)
 - [x] **Faza 5e** — AI-readiness (outbound authority, RAG chunking, AI-fluff, entity density), a11y (ARIA/etykiety/tabindex), hreflang return tags, łańcuchy canonical, paginacja, formaty obrazów (WebP/AVIF), resource hints, kanibalizacja fraz, wewnętrzny PageRank
+- [x] **Faza 5f** — użyteczność/UX: czytelność i czas czytania, zasoby blokujące render, breadcrumbs, favicon, wyszukiwarka, strony zaufania (E-E-A-T), soft-404, kompletność OG/Twitter, zgodność Title↔H1, jakość nazw plików obrazów, statystyki w treści, nagłówki anty-clickjacking/Referrer-Policy
 - [ ] **Faza 6** — analiza konkurencji i luki frazowe/treściowe (skan konkurentów), integracja CrUX/Lighthouse, eksport PDF, analiza logów serwera, wizualizacja architektury
 
 ## Porównanie z czołowymi narzędziami

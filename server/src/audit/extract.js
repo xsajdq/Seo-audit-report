@@ -185,6 +185,17 @@ export function extractPageData(html, baseUrl) {
     imgRoleSvg: $('svg[role="img"]:not([aria-label]):not([aria-labelledby])').length,
   };
 
+  // --- Zasoby blokujące renderowanie + okruszki + wyszukiwarka (UX) ---
+  const renderBlocking = {
+    headSyncScripts: $('head script[src]:not([async]):not([defer]):not([type="module"])').length,
+    stylesheets: $('link[rel="stylesheet"]').length,
+    inlineStyleBytes: $('style').toArray().reduce((s, el) => s + $(el).text().length, 0),
+    inlineScriptBytes: $('script:not([src])').toArray().reduce((s, el) => s + $(el).text().length, 0),
+  };
+  const hasBreadcrumb =
+    $('[class*="breadcrumb" i], [id*="breadcrumb" i], nav[aria-label*="breadcrumb" i], ol[itemtype*="BreadcrumbList" i]').length > 0;
+  const hasSearch = $('input[type="search"], [role="search"], form[role="search"]').length > 0;
+
   // --- GEO (Generative Engine Optimization) / struktura dla AI ---
   const semantic = {
     article: $('article').length,
@@ -263,6 +274,22 @@ export function extractPageData(html, baseUrl) {
   // --- RAG chunking: średnia liczba słów na sekcję (H2/H3) ---
   const sectionHeadings = headings.h2.length + headings.h3.length;
   const wordsPerSection = sectionHeadings > 0 ? Math.round(wordCount / (sectionHeadings + 1)) : wordCount;
+
+  // --- Czytelność (UX): średnia długość zdania + przybliżony indeks czytelności ---
+  const sentences = bodyText.split(/[.!?…]+\s/).filter((s) => s.trim().split(/\s+/).length >= 3);
+  const sentenceCount = sentences.length || 1;
+  const avgSentenceLength = Math.round(wordCount / sentenceCount);
+  const longSentences = sentences.filter((s) => s.trim().split(/\s+/).length > 25).length;
+  // Uproszczony indeks (im wyżej tym łatwiej): bazuje na długości zdań i słów.
+  const avgWordLen = bodyText.length > 0 && wordCount > 0 ? bodyText.replace(/\s/g, '').length / wordCount : 5;
+  const readability = Math.max(0, Math.min(100, Math.round(120 - avgSentenceLength * 2.2 - avgWordLen * 5)));
+  const readingTimeMin = Math.max(1, Math.round(wordCount / 200));
+
+  // --- Statystyki / dane liczbowe w treści (GEO — AI cytuje konkrety) ---
+  const statMatches = bodyText.match(/\b\d+([.,]\d+)?\s?(%|proc|tys|mln|mld|zł|pln|eur|usd|\$|€|kg|km|godz|lat|osób|razy)\b/gi) || [];
+  const percentMatches = bodyText.match(/\b\d+([.,]\d+)?\s?%/g) || [];
+  const statCount = statMatches.length + percentMatches.length;
+
   // Próbka treści do dopasowania słów kluczowych (ograniczona, by nie rozdmuchać payloadu).
   const headingsText = [...headings.h1, ...headings.h2, ...headings.h3].join(' . ');
   const bodySample = bodyText.slice(0, 1500);
@@ -326,6 +353,15 @@ export function extractPageData(html, baseUrl) {
     sectionHeadings,
     resourceHints,
     a11y,
+    renderBlocking,
+    hasBreadcrumb,
+    hasSearch,
+    hasFavicon: !!favicon,
+    avgSentenceLength,
+    longSentences,
+    readability,
+    readingTimeMin,
+    statCount,
     // Local / Geo
     hasGeoMeta,
     geoMeta: { geoRegion, geoPlacename, geoPosition, icbm },

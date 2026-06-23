@@ -83,6 +83,25 @@ export default function PageDetail({ page, onClose }) {
             </>
           )}
 
+          {s.ux && (
+            <>
+              <h4>Użyteczność (UX)</h4>
+              <div className="meta-grid">
+                <Meta label="Czytelność" value={`${s.ux.readability}/100`} />
+                <Meta label="Śr. dł. zdania" value={`${s.ux.avgSentenceLength} słów`} />
+                <Meta label="Czas czytania" value={`${s.ux.readingTimeMin} min`} />
+                <Meta label="Skrypty blok." value={s.ux.headSyncScripts} />
+                <Meta label="Arkusze CSS" value={s.ux.stylesheets} />
+                <Meta label="Dane/statystyki" value={s.ux.statCount} />
+              </div>
+              <div className="signal-grid">
+                <Signal ok={s.ux.hasBreadcrumb} label="Breadcrumbs" />
+                <Signal ok={s.ux.hasSearch} label="Wyszukiwarka" />
+                <Signal ok={s.ux.hasFavicon} label="Favicon" />
+              </div>
+            </>
+          )}
+
           {s.local && (
             <>
               <h4>Local / Geo SEO</h4>

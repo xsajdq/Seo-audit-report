@@ -150,8 +150,18 @@ export function runChecks(page) {
   }
 
   // ===== OPEN GRAPH / SOCIAL =====
-  if (!data.og['og:title'] && !data.og['og:image']) {
+  const og = data.og || {};
+  const tw = data.twitter || {};
+  if (!og['og:title'] && !og['og:image']) {
     add('notice', 'social', 'Brak tagów Open Graph', 'Brak og:title/og:image — gorsze udostępnienia w social media.');
+  } else {
+    const missingOg = ['og:title', 'og:description', 'og:image', 'og:url', 'og:type'].filter((k) => !og[k]);
+    if (missingOg.length > 0) {
+      add('notice', 'social', 'Niekompletne tagi Open Graph', `Brakuje: ${missingOg.join(', ')}.`);
+    }
+  }
+  if (!tw['twitter:card'] && (og['og:title'] || og['og:image'])) {
+    add('notice', 'social', 'Brak Twitter Card', 'Brak twitter:card — gorszy podgląd przy udostępnianiu na X/Twitter.');
   }
 
   // ===== LINKI =====
@@ -361,6 +371,64 @@ export function runChecks(page) {
   }
   if (a.imgRoleSvg >= 1) {
     add('notice', 'accessibility', 'SVG role="img" bez etykiety', `${a.imgRoleSvg} grafik SVG bez aria-label — brak tekstu alternatywnego.`);
+  }
+
+  // ===== UŻYTECZNOŚĆ (UX) =====
+  // Czytelność tekstu
+  if (data.wordCount >= 200) {
+    if (data.avgSentenceLength > 25) {
+      add('warning', 'usability', 'Trudna czytelność (długie zdania)', `Średnia długość zdania ${data.avgSentenceLength} słów — skróć zdania dla lepszej czytelności na mobile.`);
+    } else if (data.readability < 40) {
+      add('notice', 'usability', 'Niska czytelność tekstu', `Indeks czytelności ~${data.readability}/100 — uprość język i skróć zdania.`);
+    }
+  }
+  // Zasoby blokujące renderowanie
+  const rb = data.renderBlocking || {};
+  if (rb.headSyncScripts >= 3) {
+    add('warning', 'usability', 'Skrypty blokujące renderowanie', `${rb.headSyncScripts} synchronicznych skryptów w <head> bez async/defer — opóźniają wyświetlenie strony.`);
+  }
+  if (rb.stylesheets > 8) {
+    add('notice', 'usability', 'Wiele arkuszy stylów', `${rb.stylesheets} plików CSS — rozważ łączenie, każdy blokuje renderowanie.`);
+  }
+  // Breadcrumbs / nawigacja
+  if (!data.hasBreadcrumb && !ld.breadcrumb && typeof page.depth === 'number' && page.depth >= 2) {
+    add('notice', 'usability', 'Brak okruszków (breadcrumbs)', 'Strona w głębi struktury bez nawigacji okruszkowej — utrudnia orientację i osłabia linkowanie wewnętrzne.');
+  }
+  // Favicon
+  if (!data.hasFavicon) {
+    add('notice', 'usability', 'Brak favicon', 'Brak ikony favicon — wpływa na rozpoznawalność w kartach przeglądarki i wynikach.');
+  }
+
+  // ===== TITLE ↔ H1 spójność =====
+  if (data.title && data.headings.h1.length === 1) {
+    const norm = (s) => s.toLowerCase().replace(/[^a-z0-9ąćęłńóśżź\s]/gi, ' ').split(/\s+/).filter((t) => t.length > 3);
+    const tset = new Set(norm(data.title));
+    const h1set = norm(data.headings.h1[0]);
+    if (tset.size > 0 && h1set.length > 0) {
+      const overlap = h1set.filter((t) => tset.has(t)).length / Math.max(tset.size, h1set.length);
+      if (overlap === 0) {
+        add('notice', 'meta', 'Title i H1 bez wspólnych słów', 'Tytuł i H1 nie mają wspólnych słów kluczowych — rozważ spójność tematyczną.');
+      }
+    }
+  }
+
+  // ===== JAKOŚĆ NAZW PLIKÓW OBRAZÓW =====
+  const badImgNames = (data.images || []).filter((i) => /\/(img|image|dsc|dscn|photo|pic|screenshot)[-_]?\d{2,}|\/\d{4,}\.(jpe?g|png|webp|avif)/i.test(i.src || '')).length;
+  if (badImgNames >= 3) {
+    add('notice', 'content', 'Nieopisowe nazwy plików obrazów', `${badImgNames} obrazów z nazwami typu IMG_1234 — używaj nazw z frazami kluczowymi.`);
+  }
+
+  // ===== STATYSTYKI / DANE (GEO — cytowalność przez AI) =====
+  if (data.wordCount >= 400 && data.statCount === 0 && !noindex) {
+    add('notice', 'geo', 'Brak danych liczbowych / statystyk', 'Treść bez konkretnych liczb, %, kwot — AI i użytkownicy chętniej ufają i cytują treści z danymi.');
+  }
+
+  // ===== DODATKOWE NAGŁÓWKI BEZPIECZEŃSTWA =====
+  if (!headerLower['x-frame-options'] && !/frame-ancestors/.test(headerLower['content-security-policy'] || '')) {
+    add('notice', 'security', 'Brak ochrony przed clickjacking', 'Brak X-Frame-Options / CSP frame-ancestors.');
+  }
+  if (!headerLower['referrer-policy']) {
+    add('notice', 'security', 'Brak Referrer-Policy', 'Zalecane ustawienie polityki referera.');
   }
 
   return issues;

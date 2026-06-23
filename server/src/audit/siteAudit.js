@@ -167,6 +167,21 @@ export function analyzeSite(pages, { startUrl, sitemapUrls = [] } = {}) {
     }
   }
 
+  // --- Strony zaufania / E-E-A-T (polityka prywatności, kontakt, regulamin, o nas) ---
+  const allUrls = pages.map((p) => p.url.toLowerCase());
+  const allAnchors = pages.flatMap((p) => (p.data?.internalLinks || []).map((l) => `${l.href} ${l.text}`.toLowerCase()));
+  const haystack = [...allUrls, ...allAnchors].join(' \n ');
+  const trustChecks = [
+    { key: 'privacy', re: /polityk[ai].{0,12}prywatno|privacy[-_ ]?policy|prywatnosci/, label: 'Polityka prywatności' },
+    { key: 'contact', re: /kontakt|\/contact|skontaktuj/, label: 'Strona kontaktowa' },
+    { key: 'about', re: /o[-_ ]nas|about[-_ ]?us|\/about|o[-_ ]firmie/, label: 'Strona „O nas"' },
+    { key: 'terms', re: /regulamin|terms|warunki|tos\b/, label: 'Regulamin / warunki' },
+  ];
+  const missingTrust = trustChecks.filter((c) => !c.re.test(haystack)).map((c) => c.label);
+  if (missingTrust.length > 0) {
+    add('notice', 'usability', 'Brak stron zaufania (E-E-A-T)', `Nie wykryto: ${missingTrust.join(', ')} — ważne dla zaufania, YMYL i oceny E-E-A-T.`);
+  }
+
   // --- Wewnętrzny PageRank (przepływ mocy linków) ---
   const prStats = computeInternalPageRank(pages, indexable);
   if (prStats.weakImportant.length > 0) {
