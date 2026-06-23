@@ -29,7 +29,7 @@ export function toCSV(result) {
     .join('\n');
 }
 
-export function toHTMLReport(result) {
+export function toHTMLReport(result, kg = null) {
   const { summary, meta, site } = result;
   const sevColor = { error: '#dc2626', warning: '#d97706', notice: '#0891b2' };
 
@@ -102,9 +102,45 @@ td a{color:#2563eb;text-decoration:none} h2{font-size:18px;margin:24px 0 12px}
 <table><thead><tr><th>Kategoria</th><th>Wynik</th><th>Błędy</th><th>Ostrzeżenia</th><th>Uwagi</th></tr></thead><tbody>${catRows}</tbody></table>
 <h2>Najczęstsze problemy</h2>
 <table><thead><tr><th>Waga</th><th>Problem</th><th>Kategoria</th><th>Wystąpień</th></tr></thead><tbody>${issueRows}</tbody></table>
+${kgSection(kg, esc)}
 <h2>Strony (${result.pages.length})</h2>
 <table><thead><tr><th>URL</th><th>Status</th><th>Tytuł</th><th>H1</th><th>Słów</th><th>E</th><th>W</th><th>N</th></tr></thead><tbody>${pageRows}</tbody></table>
 </div></body></html>`;
+}
+
+// Sekcja tematycznego grafu wiedzy + kompletności wpisów w raporcie HTML.
+function kgSection(kg, esc) {
+  if (!kg || !kg.topics || kg.topics.length === 0) return '';
+  const covColor = (s) => (s >= 70 ? '#16a34a' : s >= 50 ? '#d97706' : '#dc2626');
+  const topicRows = kg.topics.map((t) =>
+    `<tr><td>${esc(t.label)}</td><td>${t.size}</td><td style="color:${covColor(t.coverage)}"><b>${t.coverage}%</b></td><td>${t.hasPillar ? '✓' : '—'}</td><td>${t.interlinkRatio}%</td><td>${Object.entries(t.byType).map(([k, n]) => `${n}×${k}`).join(', ')}</td></tr>`
+  ).join('');
+
+  // Kompletność wpisów < 100%
+  const incomplete = [];
+  for (const t of kg.topics) {
+    for (const p of t.pages) {
+      if (p.completeness != null && p.completeness < 100) {
+        incomplete.push({ topic: t.label, ...p });
+      }
+    }
+  }
+  incomplete.sort((a, b) => a.completeness - b.completeness);
+  const complRows = incomplete.slice(0, 40).map((p) =>
+    `<tr><td><a href="${esc(p.url)}" target="_blank">${esc(p.title)}</a></td><td>${esc(p.topic)}</td><td style="color:${covColor(p.completeness)}"><b>${p.completeness}%</b></td><td>${esc((p.missing || []).slice(0, 8).join(', '))}</td></tr>`
+  ).join('');
+
+  const gapRows = (kg.gaps || []).map((g) =>
+    `<tr><td>${esc(g.topic)}</td><td>${esc(g.type)}</td><td>${esc(g.detail)}</td></tr>`
+  ).join('');
+
+  return `<h2>Tematyczny graf wiedzy</h2>
+<div class="sub">Tematów: ${kg.stats.topics} · śr. pokrycie ${kg.stats.avgCoverage}% · luk: ${kg.stats.gapsCount} · klastry bez pillara: ${kg.stats.pillarsMissing}</div>
+<table><thead><tr><th>Temat</th><th>Stron</th><th>Pokrycie</th><th>Pillar</th><th>Interlink</th><th>Skład</th></tr></thead><tbody>${topicRows}</tbody></table>
+${complRows ? `<h2>Kompletność treści wpisów (&lt;100%)</h2>
+<table><thead><tr><th>Strona</th><th>Temat</th><th>Kompletność</th><th>Brakujące podtematy</th></tr></thead><tbody>${complRows}</tbody></table>` : ''}
+${gapRows ? `<h2>Luki tematyczne</h2>
+<table><thead><tr><th>Temat</th><th>Typ</th><th>Rekomendacja</th></tr></thead><tbody>${gapRows}</tbody></table>` : ''}`;
 }
 
 function esc(s) {

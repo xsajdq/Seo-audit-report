@@ -54,12 +54,23 @@ export default function KnowledgeGraph({ resultId }) {
             <Stat n={selTopic.hasPillar ? 'Tak' : 'Nie'} label="Pillar" cls={selTopic.hasPillar ? 'good' : 'warn'} />
             <Stat n={`${selTopic.interlinkRatio}%`} label="Interlinking" />
           </div>
+          {selTopic.expectedTerms?.length > 0 && (
+            <p className="expected-terms"><b>Temat powinien pokrywać:</b> {selTopic.expectedTerms.join(', ')}</p>
+          )}
           <ul className="topic-pages">
             {selTopic.pages.map((p, i) => (
               <li key={i}>
                 <span className={`type-badge t-${p.type}`}>{p.typeLabel}</span>
                 <a href={p.url} target="_blank" rel="noreferrer">{p.title}</a>
                 <span className="muted"> · {p.words} słów</span>
+                {p.completeness != null && (
+                  <span className={`compl ${complCls(p.completeness)}`}> · kompletność {p.completeness}%</span>
+                )}
+                {p.missing?.length > 0 && (
+                  <div className="missing-terms">Brakuje: {p.missing.join(', ')}
+                    {p.missingQuestions?.length > 0 && <> · <i>pytania: {p.missingQuestions.join(' | ')}</i></>}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -153,6 +164,9 @@ function CompetitorGap({ resultId }) {
                 <b> {g.topic}</b>
                 <span className="muted"> · u: {g.competitors.join(', ')}</span>
               </div>
+              {g.subtopics?.length > 0 && (
+                <p className="expected-terms"><b>Podtematy do pokrycia:</b> {g.subtopics.join(', ')}</p>
+              )}
               <ul className="issue-pages">
                 {g.examples.map((e, k) => (
                   <li key={k}><a href={e.url} target="_blank" rel="noreferrer">{e.title}</a> <span className="muted">({e.type})</span></li>
@@ -171,6 +185,11 @@ function Stat({ n, label, cls }) {
 }
 function covCls(s) {
   if (s >= 70) return 'great';
+  if (s >= 50) return 'ok';
+  return 'bad';
+}
+function complCls(s) {
+  if (s >= 80) return 'great';
   if (s >= 50) return 'ok';
   return 'bad';
 }

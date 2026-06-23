@@ -173,7 +173,9 @@ app.get('/api/result/:id/export', (req, res) => {
   } else if (format === 'html') {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${base}.html"`);
-    res.send(toHTMLReport(r));
+    let kg = null;
+    try { kg = buildKnowledgeGraph(r.pages, { label: host }); } catch { /* graf opcjonalny */ }
+    res.send(toHTMLReport(r, kg));
   } else {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${base}.json"`);

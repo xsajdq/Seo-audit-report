@@ -110,11 +110,26 @@ export function buildKnowledgeGraph(pages, { label = 'Twoja witryna' } = {}) {
       (size >= 3 && maxWords >= avgWords * 1.8 && maxWords >= 800);
     const interlinkRatio = size > 1 ? Math.min(1, intraLinks[tid] / (size - 1)) : 1;
     const coverage = coverageScore({ size, avgWords, hasPillar, interlinkRatio });
+    // Audyt kompletności treści wpisów względem profilu tematu
+    const completeness = computeCompleteness(members, surface);
     return {
       id: tid,
       label: topicLabels[tid] || `Temat ${tid + 1}`,
       size,
-      pages: members.map((m) => ({ url: m.origUrl, type: m.type, typeLabel: TYPES[m.type], title: m.page.seo?.title || m.origUrl, words: m.page.seo?.wordCount || 0, depth: m.page.depth })),
+      expectedTerms: completeness.expectedTerms,
+      expectedQuestions: completeness.expectedQuestions,
+      pages: members.map((m) => {
+        const comp = completeness.perUrl.get(m.origUrl) || {};
+        return {
+          url: m.origUrl, type: m.type, typeLabel: TYPES[m.type],
+          title: m.page.seo?.title || m.origUrl, words: m.page.seo?.wordCount || 0, depth: m.page.depth,
+          completeness: comp.completeness ?? null,
+          coveredCount: comp.covered ?? 0,
+          expectedCount: completeness.expectedTerms.length,
+          missing: comp.missing || [],
+          missingQuestions: comp.missingQuestions || [],
+        };
+      }),
       byType,
       dominantType,
       avgWords,
@@ -142,6 +157,54 @@ export function buildKnowledgeGraph(pages, { label = 'Twoja witryna' } = {}) {
   };
 
   return { label, stats, topics, nodes, edges, gaps, pageTypes: typeBreakdown(typeCounts) };
+}
+
+// Audyt kompletności: profil tematu (oczekiwane podtematy/pytania) + pokrycie per wpis.
+// Profil = istotne terminy występujące w znaczącej części stron klastra.
+export function computeCompleteness(members, surface, extraProfileMembers = []) {
+  const profileDocs = [...members, ...extraProfileMembers];
+  const psize = profileDocs.length;
+  if (psize < 2) return { expectedTerms: [], expectedQuestions: [], perUrl: new Map() };
+
+  // DF terminów w obrębie profilu
+  const memberTokenSets = profileDocs.map((m) => new Set(tokenize(m.text)));
+  const df = new Map();
+  for (const set of memberTokenSets) for (const t of set) df.set(t, (df.get(t) || 0) + 1);
+
+  // oczekiwane terminy: występujące w >=40% stron (min 2), pomijamy zbyt rzadkie/uniwersalne
+  const minDf = Math.max(2, Math.ceil(psize * 0.4));
+  const expectedStems = [...df.entries()]
+    .filter(([, c]) => c >= minDf)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 30)
+    .map(([t]) => t);
+  const surf = (s) => (surface ? surface(s) : s);
+  const expectedTerms = expectedStems.map(surf);
+
+  // oczekiwane pytania (nagłówki-pytania w temacie)
+  const qMap = new Map();
+  for (const m of profileDocs) {
+    for (const h of String(m.page?.seo?.headingsText || '').split(' . ')) {
+      if (h.includes('?')) {
+        const key = h.trim().toLowerCase();
+        if (key.length > 8) qMap.set(key, (qMap.get(key) || h.trim()));
+      }
+    }
+  }
+  const expectedQuestions = [...qMap.values()].slice(0, 10);
+
+  // pokrycie per wpis (tylko nasze strony = members)
+  const perUrl = new Map();
+  for (const m of members) {
+    const set = new Set(tokenize(m.text));
+    const covered = expectedStems.filter((s) => set.has(s));
+    const missing = expectedStems.filter((s) => !set.has(s)).map(surf).slice(0, 15);
+    const ownQ = String(m.page?.seo?.headingsText || '').toLowerCase();
+    const missingQuestions = expectedQuestions.filter((q) => !ownQ.includes(q.toLowerCase().slice(0, 20))).slice(0, 6);
+    const completeness = expectedStems.length > 0 ? Math.round((covered.length / expectedStems.length) * 100) : null;
+    perUrl.set(m.origUrl, { completeness, covered: covered.length, missing, missingQuestions });
+  }
+  return { expectedTerms, expectedQuestions, perUrl };
 }
 
 function coverageScore({ size, avgWords, hasPillar, interlinkRatio }) {

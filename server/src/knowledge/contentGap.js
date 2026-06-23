@@ -56,20 +56,23 @@ export function analyzeContentGap(ourPages, competitors) {
       const key = ct.label;
       const examples = ct.pages.slice(0, 4).map((p) => ({ url: p.url, title: p.title, type: p.typeLabel }));
 
+      const subtopics = (ct.expectedTerms || []).slice(0, 12);
       if (best < MATCH_THRESHOLD) {
         // temat całkowicie nieobecny u nas
-        const e = gapMap.get(key) || { topic: ct.label, kind: 'missing', dominantType: ct.dominantType, competitors: [], examples: [], compCount: 0 };
+        const e = gapMap.get(key) || { topic: ct.label, kind: 'missing', dominantType: ct.dominantType, competitors: [], examples: [], compCount: 0, subtopics: [] };
         e.kind = 'missing';
         e.competitors.push(comp.domain);
         e.compCount += ct.size;
         e.examples.push(...examples);
+        e.subtopics = [...new Set([...e.subtopics, ...subtopics])].slice(0, 12);
         gapMap.set(key, e);
       } else if (ct.blogCount >= 2 && bestOur && ct.blogCount > (bestOur.blogCount + 1)) {
         // temat jest, ale konkurent ma znacznie więcej wpisów
-        const e = gapMap.get(key) || { topic: bestOur.label, kind: 'thinner', dominantType: ct.dominantType, competitors: [], examples: [], compCount: 0, ourCount: bestOur.blogCount };
+        const e = gapMap.get(key) || { topic: bestOur.label, kind: 'thinner', dominantType: ct.dominantType, competitors: [], examples: [], compCount: 0, ourCount: bestOur.blogCount, subtopics: [] };
         e.kind = 'thinner';
         e.competitors.push(`${comp.domain} (${ct.blogCount} vs Twoje ${bestOur.blogCount})`);
         e.examples.push(...examples);
+        e.subtopics = [...new Set([...e.subtopics, ...subtopics])].slice(0, 12);
         gapMap.set(key, e);
       }
     }
