@@ -9,6 +9,7 @@ import { toCSV, toHTMLReport, buildChecklistXlsx } from './report/exporter.js';
 import { matchKeywords } from './keyword/keywordMatcher.js';
 import { buildKnowledgeGraph } from './knowledge/topicGraph.js';
 import { analyzeContentGap } from './knowledge/contentGap.js';
+import { analyzePage } from './knowledge/pageAnalysis.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -122,6 +123,21 @@ app.get('/api/result/:id/knowledge-graph', (req, res) => {
   try {
     const host = (() => { try { return new URL(r.meta.startUrl).hostname; } catch { return 'Twoja witryna'; } })();
     res.json(buildKnowledgeGraph(r.pages, { label: host }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Głęboka analiza pojedynczego wpisu/usługi (encje, frazy, podtematy) ---
+app.post('/api/result/:id/page-analysis', async (req, res) => {
+  const r = lastResults.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku audytu (uruchom audyt ponownie).' });
+  const { url, useApi } = req.body || {};
+  if (!url) return res.status(400).json({ error: 'Podaj adres strony do analizy.' });
+  try {
+    const analysis = await analyzePage(url, r, { useApi: !!useApi });
+    if (analysis.error) return res.status(422).json(analysis);
+    res.json(analysis);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

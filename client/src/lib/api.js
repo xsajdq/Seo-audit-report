@@ -72,6 +72,17 @@ export async function analyzeContentGap(resultId, competitors, maxPages) {
   return r.json();
 }
 
+export async function analyzePageContent(resultId, url, useApi) {
+  const r = await fetch(`/api/result/${resultId}/page-analysis`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, useApi }),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `Błąd ${r.status}`);
+  return data;
+}
+
 export async function getHealth() {
   try {
     const r = await fetch('/api/health');

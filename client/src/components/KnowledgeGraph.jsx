@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { getKnowledgeGraph, analyzeContentGap } from '../lib/api.js';
 import TopicGraphView from './TopicGraphView.jsx';
+import PageAnalysisModal from './PageAnalysisModal.jsx';
 
 export default function KnowledgeGraph({ resultId }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [analyzeUrl, setAnalyzeUrl] = useState(null);
 
   useEffect(() => {
     getKnowledgeGraph(resultId).then(setData).catch((e) => setError(e.message));
@@ -66,6 +68,7 @@ export default function KnowledgeGraph({ resultId }) {
                 {p.completeness != null && (
                   <span className={`compl ${complCls(p.completeness)}`}> · kompletność {p.completeness}%</span>
                 )}
+                <button className="btn ghost tiny" style={{ marginLeft: 8 }} onClick={() => setAnalyzeUrl(p.url)}>Analizuj treść</button>
                 {p.missing?.length > 0 && (
                   <div className="missing-terms">Brakuje: {p.missing.join(', ')}
                     {p.missingQuestions?.length > 0 && <> · <i>pytania: {p.missingQuestions.join(' | ')}</i></>}
@@ -110,6 +113,8 @@ export default function KnowledgeGraph({ resultId }) {
       )}
 
       <CompetitorGap resultId={resultId} />
+
+      {analyzeUrl && <PageAnalysisModal resultId={resultId} url={analyzeUrl} onClose={() => setAnalyzeUrl(null)} />}
     </div>
   );
 }
