@@ -40,6 +40,11 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - dla fraz bez dobrej strony proponuje **utworzenie nowej podstrony** (z klastrowaniem podobnych fraz i slugiem),
   - generuje sugerowany **meta title i description** wg schematu `główne słowo - dodatkowe frazy | brand` (z limitami długości i przyciskiem „Kopiuj"),
   - **klasyfikuje frazy wg intencji** (transakcyjna / informacyjna / nawigacyjna / ogólna) + flaga **lokalna** (miasta PL, wskazówki lokalizacyjne).
+- **Tematyczny graf wiedzy (topical map) + analiza luk treściowych**:
+  - automatyczna **klasyfikacja typów podstron** (wpis blogowy / usługa / produkt / kategoria / lokalizacja / kontakt / o nas / prawne)
+  - **klastrowanie tematyczne** (TF-IDF + cosine) i interaktywna **wizualizacja grafu** (tematy + linkowanie wewnętrzne)
+  - **pokrycie i luki**: płytkie tematy, brak strony filarowej (pillar), słaby interlinking klastra
+  - **analiza luk vs konkurencja** — podajesz domeny konkurentów, aplikacja skanuje ich blogi i wskazuje tematy, których u Ciebie brakuje lub są słabiej rozwinięte
 
 ## Wymagania
 
@@ -114,7 +119,8 @@ client/   React + Vite
 - [x] **Faza 5d** — inteligencja cross-page (graf linków, broken/redirect internal, sitemap↔crawl, near-duplicate, click depth, kanonikalizacja domeny, anchor text)
 - [x] **Faza 5e** — AI-readiness (outbound authority, RAG chunking, AI-fluff, entity density), a11y (ARIA/etykiety/tabindex), hreflang return tags, łańcuchy canonical, paginacja, formaty obrazów (WebP/AVIF), resource hints, kanibalizacja fraz, wewnętrzny PageRank
 - [x] **Faza 5f** — użyteczność/UX: czytelność i czas czytania, zasoby blokujące render, breadcrumbs, favicon, wyszukiwarka, strony zaufania (E-E-A-T), soft-404, kompletność OG/Twitter, zgodność Title↔H1, jakość nazw plików obrazów, statystyki w treści, nagłówki anty-clickjacking/Referrer-Policy
-- [ ] **Faza 6** — analiza konkurencji i luki frazowe/treściowe (skan konkurentów), integracja CrUX/Lighthouse, eksport PDF, analiza logów serwera, wizualizacja architektury
+- [x] **Faza 6** — tematyczny graf wiedzy (topical map): klasyfikacja typów podstron, klastrowanie tematyczne, wizualizacja grafu, pokrycie/luki, analiza luk treściowych vs konkurencja
+- [ ] **Faza 7** — integracja CrUX/Lighthouse, eksport PDF, analiza logów serwera
 
 ## Porównanie z czołowymi narzędziami
 

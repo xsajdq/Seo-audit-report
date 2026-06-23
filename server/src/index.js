@@ -7,6 +7,8 @@ import { runAudit, CrawlController } from './crawler/crawler.js';
 import { isRenderAvailable, closeBrowser } from './render/renderer.js';
 import { toCSV, toHTMLReport } from './report/exporter.js';
 import { matchKeywords } from './keyword/keywordMatcher.js';
+import { buildKnowledgeGraph } from './knowledge/topicGraph.js';
+import { analyzeContentGap } from './knowledge/contentGap.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -108,6 +110,49 @@ app.post('/api/result/:id/keywords', (req, res) => {
   try {
     const result = matchKeywords(r.pages, keywords, { brand: (brand || '').trim() });
     res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Tematyczny graf wiedzy (pokrycie + luki) ---
+app.get('/api/result/:id/knowledge-graph', (req, res) => {
+  const r = lastResults.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku audytu (uruchom audyt ponownie).' });
+  try {
+    const host = (() => { try { return new URL(r.meta.startUrl).hostname; } catch { return 'Twoja witryna'; } })();
+    res.json(buildKnowledgeGraph(r.pages, { label: host }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Analiza luk treściowych vs konkurencja (skanuje domeny konkurentów) ---
+app.post('/api/result/:id/content-gap', async (req, res) => {
+  const r = lastResults.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku audytu (uruchom audyt ponownie).' });
+  let { competitors, maxPages } = req.body || {};
+  if (!Array.isArray(competitors) || competitors.length === 0) {
+    return res.status(400).json({ error: 'Podaj co najmniej jedną domenę konkurenta.' });
+  }
+  competitors = competitors.map((c) => String(c).trim()).filter(Boolean).slice(0, 4);
+  const perComp = Math.min(Number(maxPages) || 40, 120);
+
+  try {
+    const results = [];
+    for (const c of competitors) {
+      let url = c;
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+      const audit = await runAudit({
+        startUrl: url, maxPages: perComp, concurrency: 5,
+        respectRobots: true, includeSubdomains: false, checkExternalLinks: false,
+        renderJs: false, useSitemap: true,
+      }, () => {}, new CrawlController());
+      let domain = url; try { domain = new URL(audit.meta.startUrl).hostname; } catch { /* noop */ }
+      results.push({ domain, pages: audit.pages });
+    }
+    const gap = analyzeContentGap(r.pages, results);
+    res.json(gap);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

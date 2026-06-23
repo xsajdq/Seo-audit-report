@@ -50,6 +50,28 @@ export async function matchKeywords(resultId, keywords, brand) {
   return r.json();
 }
 
+export async function getKnowledgeGraph(resultId) {
+  const r = await fetch(`/api/result/${resultId}/knowledge-graph`);
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error || `Błąd ${r.status}`);
+  }
+  return r.json();
+}
+
+export async function analyzeContentGap(resultId, competitors, maxPages) {
+  const r = await fetch(`/api/result/${resultId}/content-gap`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ competitors, maxPages }),
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error || `Błąd ${r.status}`);
+  }
+  return r.json();
+}
+
 export async function getHealth() {
   try {
     const r = await fetch('/api/health');

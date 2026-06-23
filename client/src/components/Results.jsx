@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import ScoreGauge from './ScoreGauge.jsx';
 import PageDetail from './PageDetail.jsx';
 import KeywordMapper from './KeywordMapper.jsx';
+import KnowledgeGraph from './KnowledgeGraph.jsx';
 
 const SEV_LABEL = { error: 'Błędy', warning: 'Ostrzeżenia', notice: 'Uwagi' };
 
@@ -61,6 +62,7 @@ export default function Results({ result, resultId, onReset }) {
         <button className={tab === 'pages' ? 'active' : ''} onClick={() => setTab('pages')}>Strony ({result.pages.length})</button>
         <button className={tab === 'site' ? 'active' : ''} onClick={() => setTab('site')}>Analiza witryny</button>
         <button className={tab === 'keywords' ? 'active' : ''} onClick={() => setTab('keywords')}>Słowa kluczowe</button>
+        <button className={tab === 'graph' ? 'active' : ''} onClick={() => setTab('graph')}>Graf wiedzy</button>
       </div>
 
       {tab === 'overview' && <Categories categories={result.summary.categories} />}
@@ -68,6 +70,7 @@ export default function Results({ result, resultId, onReset }) {
       {tab === 'pages' && <PagesTable pages={result.pages} onSelect={setSelectedPage} />}
       {tab === 'site' && <SiteAnalysis result={result} />}
       {tab === 'keywords' && <KeywordMapper resultId={resultId} />}
+      {tab === 'graph' && <KnowledgeGraph resultId={resultId} />}
 
       {selectedPage && (
         <PageDetail page={selectedPage} onClose={() => setSelectedPage(null)} />

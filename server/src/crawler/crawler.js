@@ -379,6 +379,7 @@ function serializePage(p) {
           imagesMissingAlt: d.imagesMissingAlt,
           internalLinkCount: d.internalLinkCount,
           externalLinkCount: d.externalLinkCount,
+          internalLinkHrefs: (d.internalLinks || []).slice(0, 200).map((l) => l.href),
           hasStructuredData: d.jsonLd.length > 0 || d.microdata > 0 || d.rdfa > 0,
           structuredTypes: d.jsonLd.flatMap((j) => j.types),
           hasOpenGraph: !!(d.og['og:title'] || d.og['og:image']),

@@ -276,6 +276,41 @@ code { background: #f1f5f9; padding: 1px 6px; border-radius: 5px; font-size: 0.9
   .kw-inputs { grid-template-columns: 1fr; }
 }
 
+/* Knowledge graph */
+.type-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.type-chip { background: #f1f5f9; border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+.type-chip b { color: var(--primary); }
+.graph-wrap { border: 1px solid var(--border); border-radius: 12px; background: #fafbfc; margin: 12px 0; padding: 8px; }
+.topic-graph { width: 100%; height: auto; display: block; }
+.graph-label { pointer-events: none; }
+.graph-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); padding: 8px 4px 2px; }
+.graph-legend span { display: flex; align-items: center; gap: 4px; }
+.graph-legend i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.topic-detail { background: #f8fafc; border-radius: 10px; padding: 14px; margin: 12px 0; }
+.topic-detail-head { display: flex; justify-content: space-between; align-items: center; }
+.topic-pages { list-style: none; padding: 0; margin: 10px 0 0; }
+.topic-pages li { padding: 4px 0; font-size: 13px; border-bottom: 1px solid #eef2f7; }
+.topic-pages a { color: var(--primary); text-decoration: none; }
+.type-badge { font-size: 11px; padding: 1px 7px; border-radius: 5px; margin-right: 6px; background: #e2e8f0; color: #334155; }
+.type-badge.t-blog { background: #dbeafe; color: #1e40af; }
+.type-badge.t-service { background: #dcfce7; color: #166534; }
+.type-badge.t-product { background: #f3e8ff; color: #6b21a8; }
+.type-badge.t-category { background: #fef3c7; color: #92400e; }
+.type-badge.t-location { background: #cffafe; color: #155e75; }
+.topic-list { display: flex; flex-direction: column; gap: 8px; }
+.topic-row { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+.topic-row:hover { background: #f8fafc; }
+.topic-row.gap { border-left: 3px solid var(--error); }
+.topic-row-head { display: flex; justify-content: space-between; align-items: center; }
+.topic-name { font-weight: 500; font-size: 14px; }
+.cov { font-weight: 700; font-size: 14px; }
+.cov.great { color: #16a34a; } .cov.ok { color: #d97706; } .cov.bad { color: #dc2626; }
+.topic-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
+.gap-badge { font-size: 11px; padding: 1px 8px; border-radius: 5px; background: #fee2e2; color: #991b1b; font-weight: 600; }
+.gap-badge.missing { background: #fee2e2; color: #991b1b; }
+.gap-badge.thinner { background: #fef3c7; color: #92400e; }
+.competitor-box { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
 @media (max-width: 720px) {
   .overview-grid { grid-template-columns: 1fr; }
   .gauge-card { flex-direction: column; }
