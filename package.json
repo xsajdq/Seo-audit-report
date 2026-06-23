@@ -9,7 +9,6 @@
     "client"
   ],
   "scripts": {
-    "postinstall": "npm --workspace client install && npm --workspace server install",
     "dev": "concurrently -n server,client -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "npm --workspace server run dev",
     "dev:client": "npm --workspace client run dev",
