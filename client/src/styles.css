@@ -330,6 +330,34 @@ code { background: #f1f5f9; padding: 1px 6px; border-radius: 5px; font-size: 0.9
 .dl-buttons { display: flex; gap: 8px; }
 .issue-fix { background: #f0fdf4; border-left: 3px solid #16a34a; padding: 6px 10px; border-radius: 6px; font-size: 13px; margin: 6px 0 0; color: #14532d; }
 
+/* Content tools */
+.subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.subtabs button { padding: 8px 14px; border: 1px solid var(--border); background: #f8fafc; border-radius: 999px; cursor: pointer; font-size: 14px; }
+.subtabs button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.plan-month { margin: 14px 0; }
+.plan-month h4 { border-bottom: 2px solid var(--border); padding-bottom: 4px; }
+.plan-item { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+.outline { list-style: none; padding: 0; margin: 8px 0; }
+.outline li { padding: 4px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+.outline li b { display: inline-block; width: 34px; color: var(--primary); font-size: 12px; }
+.outline .ol-H1 { font-weight: 600; }
+.outline .ol-H3 { padding-left: 24px; color: #475569; }
+.brief h4 { margin-top: 16px; }
+.editor-score { display: flex; align-items: center; gap: 18px; margin: 12px 0; }
+.grade-badge { width: 64px; height: 64px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 800; color: #fff; flex-shrink: 0; }
+.grade-badge.g-A { background: #16a34a; } .grade-badge.g-B { background: #65a30d; } .grade-badge.g-C { background: #d97706; } .grade-badge.g-D { background: #ea580c; } .grade-badge.g-F { background: #dc2626; }
+
+/* History */
+.history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.history .proj { margin: 16px 0; }
+.history .proj h3 { font-size: 15px; margin-bottom: 6px; }
+.pos { color: #16a34a; } .neg { color: #dc2626; }
+.cmp { background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+.cmp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 13px; }
+.cmp-grid ul { margin: 6px 0; padding-left: 18px; }
+.great { color: #16a34a; } .good { color: #65a30d; } .ok { color: #d97706; } .bad { color: #dc2626; }
+
 @media (max-width: 720px) {
   .overview-grid { grid-template-columns: 1fr; }
   .gauge-card { flex-direction: column; }

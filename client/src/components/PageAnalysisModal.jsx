@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { analyzePageContent } from '../lib/api.js';
+import { analyzePageContent, linkSuggestions } from '../lib/api.js';
 
 export default function PageAnalysisModal({ resultId, url, onClose }) {
   const [useApi, setUseApi] = useState(false);
@@ -75,10 +75,39 @@ export default function PageAnalysisModal({ resultId, url, onClose }) {
                 <p><b>Encje:</b> {data.own.entities.join(', ') || '—'}</p>
                 <p><b>Frazy:</b> {data.own.keyphrases.join(', ') || '—'}</p>
               </details>
+
+              <LinkSuggestions resultId={resultId} url={url} />
             </>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function LinkSuggestions({ resultId, url }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  async function run() {
+    setLoading(true);
+    try { setData(await linkSuggestions(resultId, url)); } catch { /* noop */ } finally { setLoading(false); }
+  }
+  return (
+    <div className="analysis-block">
+      <h4>Linkowanie wewnętrzne</h4>
+      {!data && <button className="btn ghost tiny" onClick={run} disabled={loading}>{loading ? 'Szukam…' : 'Pokaż skąd podlinkować tę stronę'}</button>}
+      {data && (
+        <>
+          <p className="muted" style={{ fontSize: 13 }}>Sugerowany anchor: <b>„{data.suggestedAnchor}"</b> · obecnych linków przychodzących: {data.existingInboundCount}</p>
+          {data.opportunities.length === 0 ? <p className="muted">Brak nowych okazji linkowania.</p> : (
+            <ul className="issue-pages">
+              {data.opportunities.map((o, i) => (
+                <li key={i}>z <a href={o.url} target="_blank" rel="noreferrer">{o.title || o.url}</a> <span className="muted">({o.relevance}% trafności)</span></li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -191,6 +191,26 @@ export function buildContentChecklistXlsx(result, kg) {
   return buildXlsx(sheets);
 }
 
+// Content plan -> .xlsx (kalendarz redakcyjny)
+export function buildContentPlanXlsx(plan) {
+  const STATUS_OPTIONS = ['Do zrobienia', 'W przygotowaniu', 'W trakcie', 'Opublikowane'];
+  const header = ['Miesiąc', 'Akcja', 'Typ', 'Główna fraza', 'Sugerowany tytuł', 'Slug / URL', 'Klaster', 'Intencja', 'Priorytet', 'Frazy wspierające', 'Uzasadnienie', 'Status', 'Właściciel'];
+  const rows = [header];
+  for (const it of plan.items) {
+    rows.push([
+      `Miesiąc ${it.month}`, it.action, it.type, it.keyword, it.title || '', it.slug || it.url || '',
+      it.cluster || '', it.intent || '', it.priority, (it.supporting || []).join(', '), it.reason || '', '', '',
+    ]);
+  }
+  const sheets = [{
+    name: 'Content plan', autofilter: true,
+    columns: [{ width: 11 }, { width: 18 }, { width: 20 }, { width: 28 }, { width: 44 }, { width: 34 }, { width: 22 }, { width: 14 }, { width: 10 }, { width: 38 }, { width: 50 }, { width: 16 }, { width: 16 }],
+    rows,
+    statusValidation: { col: 11, lastRow: rows.length, options: STATUS_OPTIONS },
+  }];
+  return buildXlsx(sheets);
+}
+
 export function toHTMLReport(result, kg = null) {
   const { summary, meta, site } = result;
   const sevColor = { error: '#dc2626', warning: '#d97706', notice: '#0891b2' };

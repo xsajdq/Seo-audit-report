@@ -83,6 +83,46 @@ export async function analyzePageContent(resultId, url, useApi) {
   return data;
 }
 
+async function postJson(url, body) {
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `Błąd ${r.status}`);
+  return data;
+}
+
+export const generateContentPlan = (id, body) => postJson(`/api/result/${id}/content-plan`, body);
+export const generateBrief = (id, body) => postJson(`/api/result/${id}/brief`, body);
+export const scoreDraft = (id, body) => postJson(`/api/result/${id}/score-draft`, body);
+export const linkSuggestions = (id, url) => postJson(`/api/result/${id}/link-suggestions`, { url });
+export const expandKeyword = (seed, deep = true) => postJson('/api/keywords/expand', { seed, deep });
+
+export async function downloadContentPlanXlsx(id, body) {
+  const r = await fetch(`/api/result/${id}/content-plan?format=xlsx`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('Nie udało się pobrać pliku.');
+  const blob = await r.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'content-plan.xlsx';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+export async function getHistory() {
+  const r = await fetch('/api/history'); return r.ok ? r.json() : { audits: [], projects: [] };
+}
+export async function loadHistoryAudit(id) {
+  const r = await fetch(`/api/history/${id}`);
+  if (!r.ok) throw new Error('Nie udało się wczytać audytu.');
+  return r.json();
+}
+export async function compareHistory(a, b) {
+  const r = await fetch(`/api/history/compare?a=${a}&b=${b}`);
+  if (!r.ok) throw new Error('Nie udało się porównać.');
+  return r.json();
+}
+export async function deleteHistory(id) {
+  await fetch(`/api/history/${id}`, { method: 'DELETE' });
+}
+
 export async function getHealth() {
   try {
     const r = await fetch('/api/health');

@@ -3,6 +3,7 @@ import ScoreGauge from './ScoreGauge.jsx';
 import PageDetail from './PageDetail.jsx';
 import KeywordMapper from './KeywordMapper.jsx';
 import KnowledgeGraph from './KnowledgeGraph.jsx';
+import ContentTools from './ContentTools.jsx';
 
 const SEV_LABEL = { error: 'Błędy', warning: 'Ostrzeżenia', notice: 'Uwagi' };
 
@@ -64,6 +65,7 @@ export default function Results({ result, resultId, onReset }) {
         <button className={tab === 'site' ? 'active' : ''} onClick={() => setTab('site')}>Analiza witryny</button>
         <button className={tab === 'keywords' ? 'active' : ''} onClick={() => setTab('keywords')}>Słowa kluczowe</button>
         <button className={tab === 'graph' ? 'active' : ''} onClick={() => setTab('graph')}>Graf wiedzy</button>
+        <button className={tab === 'content' ? 'active' : ''} onClick={() => setTab('content')}>Narzędzia treści</button>
       </div>
 
       {tab === 'overview' && <Categories categories={result.summary.categories} />}
@@ -72,6 +74,7 @@ export default function Results({ result, resultId, onReset }) {
       {tab === 'site' && <SiteAnalysis result={result} />}
       {tab === 'keywords' && <KeywordMapper resultId={resultId} />}
       {tab === 'graph' && <KnowledgeGraph resultId={resultId} />}
+      {tab === 'content' && <ContentTools resultId={resultId} />}
 
       {selectedPage && (
         <PageDetail page={selectedPage} onClose={() => setSelectedPage(null)} />

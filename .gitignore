@@ -10,3 +10,4 @@ client/dist/
 exports/
 *.tmp
 .cache/
+server/data/

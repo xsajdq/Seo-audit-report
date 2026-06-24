@@ -271,7 +271,7 @@ function clusterUnmatched(unmatched, brand) {
 }
 
 // --- Generowanie meta title wg schematu: "główne - dodatkowe | brand" (≤ ~60 zn.) ---
-function buildTitle(primary, additional, brand) {
+export function buildTitle(primary, additional, brand) {
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   const head = cap(primary);
   const brandPart = brand ? ` | ${brand}` : '';
@@ -291,7 +291,7 @@ function buildTitle(primary, additional, brand) {
 }
 
 // --- Generowanie meta description (≤ ~158 zn.) ---
-function buildDescription(primary, additional, brand) {
+export function buildDescription(primary, additional, brand) {
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   const budget = 158;
   const extras = additional.slice(0, 3).join(', ');

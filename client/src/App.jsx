@@ -3,6 +3,7 @@ import { startAudit, getHealth } from './lib/api.js';
 import AuditForm from './components/AuditForm.jsx';
 import Progress from './components/Progress.jsx';
 import Results from './components/Results.jsx';
+import HistoryPanel from './components/HistoryPanel.jsx';
 
 export default function App() {
   const [phase, setPhase] = useState('idle'); // idle | running | done | error
@@ -84,7 +85,10 @@ export default function App() {
 
       <main className="main">
         {phase === 'idle' && (
-          <AuditForm onStart={handleStart} renderAvailable={health.renderAvailable} />
+          <>
+            <AuditForm onStart={handleStart} renderAvailable={health.renderAvailable} />
+            <HistoryPanel onOpen={(res, id) => { setResult(res); setResultId(id); setPhase('done'); }} />
+          </>
         )}
         {phase === 'running' && (
           <Progress progress={progress} onCancel={handleCancel} />

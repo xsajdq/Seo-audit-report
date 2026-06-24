@@ -10,6 +10,13 @@ import { matchKeywords } from './keyword/keywordMatcher.js';
 import { buildKnowledgeGraph } from './knowledge/topicGraph.js';
 import { analyzeContentGap } from './knowledge/contentGap.js';
 import { analyzePage } from './knowledge/pageAnalysis.js';
+import { generateContentPlan } from './content/contentPlan.js';
+import { generateBrief } from './content/contentBrief.js';
+import { scoreDraft } from './content/contentScore.js';
+import { analyzeLinkOpportunities } from './content/internalLinks.js';
+import { expandKeyword } from './content/keywordExpansion.js';
+import { buildContentPlanXlsx } from './report/exporter.js';
+import { saveAudit, listHistory, getAudit, deleteAudit, compareAudits } from './store/history.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -70,6 +77,7 @@ app.get('/api/audit/stream', async (req, res) => {
   try {
     const result = await runAudit(opts, send, controller);
     lastResults.set(id, result);
+    saveAudit(id, result); // trwała historia
     // ogranicz pamięć do 20 ostatnich
     if (lastResults.size > 20) {
       const firstKey = lastResults.keys().next().value;
@@ -173,6 +181,79 @@ app.post('/api/result/:id/content-gap', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// --- Etap A: Content plan (JSON lub XLSX) ---
+app.post('/api/result/:id/content-plan', (req, res) => {
+  const r = lastResults.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku audytu.' });
+  const { keywords = [], brand = '', months = 6, perMonth = 4 } = req.body || {};
+  try {
+    const plan = generateContentPlan(r, { keywords: keywords.slice(0, 3000), brand, months: Math.min(Number(months) || 6, 24), perMonth: Math.min(Number(perMonth) || 4, 30) });
+    if (req.query.format === 'xlsx') {
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename="content-plan.xlsx"');
+      return res.send(buildContentPlanXlsx(plan));
+    }
+    res.json(plan);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- Etap B: Brief contentowy ---
+app.post('/api/result/:id/brief', async (req, res) => {
+  const r = lastResults.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku audytu.' });
+  const { keyword, url, brand = '', useSuggest = false, useApi = false } = req.body || {};
+  try {
+    const brief = await generateBrief(r, { keyword, url, brand, useSuggest: !!useSuggest, useApi: !!useApi });
+    if (brief.error) return res.status(422).json(brief);
+    res.json(brief);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- Etap C: Ocena draftu treści ---
+app.post('/api/result/:id/score-draft', (req, res) => {
+  const r = lastResults.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku audytu.' });
+  const { text = '', keyword = '', url = '' } = req.body || {};
+  try { res.json(scoreDraft(r, { text, keyword, url })); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- Etap D: Sugestie linkowania wewnętrznego ---
+app.post('/api/result/:id/link-suggestions', (req, res) => {
+  const r = lastResults.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku audytu.' });
+  const { url } = req.body || {};
+  if (!url) return res.status(400).json({ error: 'Podaj adres strony docelowej.' });
+  try {
+    const out = analyzeLinkOpportunities(r, url);
+    if (out.error) return res.status(422).json(out);
+    res.json(out);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- Etap E: Rozszerzanie fraz (Google Suggest) ---
+app.post('/api/keywords/expand', async (req, res) => {
+  const { seed, lang = 'pl', deep = true } = req.body || {};
+  if (!seed) return res.status(400).json({ error: 'Podaj frazę bazową.' });
+  try { res.json(await expandKeyword(seed, { lang, deep: !!deep })); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- Etap F: Historia i projekty ---
+app.get('/api/history', (req, res) => res.json(listHistory()));
+app.get('/api/history/compare', (req, res) => {
+  const cmp = compareAudits(req.query.a, req.query.b);
+  if (!cmp) return res.status(404).json({ error: 'Nie znaleziono audytów do porównania.' });
+  res.json(cmp);
+});
+app.get('/api/history/:id', (req, res) => {
+  const r = getAudit(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono audytu.' });
+  lastResults.set(req.params.id, r); // udostępnij dla pozostałych narzędzi
+  res.json(r);
+});
+app.delete('/api/history/:id', (req, res) => { deleteAudit(req.params.id); res.json({ ok: true }); });
 
 // --- Eksport ---
 app.get('/api/result/:id/export', (req, res) => {
