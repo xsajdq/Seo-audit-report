@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { analyzePageContent, linkSuggestions } from '../lib/api.js';
+import { analyzePageContent, linkSuggestions, competitorAnalysis } from '../lib/api.js';
 
 export default function PageAnalysisModal({ resultId, url, onClose }) {
   const [useApi, setUseApi] = useState(false);
@@ -76,6 +76,7 @@ export default function PageAnalysisModal({ resultId, url, onClose }) {
                 <p><b>Frazy:</b> {data.own.keyphrases.join(', ') || '—'}</p>
               </details>
 
+              <SerpCompare resultId={resultId} url={url} />
               <LinkSuggestions resultId={resultId} url={url} />
             </>
           )}
@@ -108,6 +109,34 @@ function LinkSuggestions({ resultId, url }) {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function SerpCompare({ resultId, url }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+  async function run() {
+    setLoading(true); setErr(null);
+    try {
+      const apiKey = localStorage.getItem('serperKey') || '';
+      if (!apiKey) { setErr('Brak klucza Serper.dev. Dodaj go w: Narzędzia treści → Vs konkurencja (SERP).'); setLoading(false); return; }
+      setData(await competitorAnalysis(resultId, { url, apiKey }));
+    } catch (e) { setErr(e.message); } finally { setLoading(false); }
+  }
+  return (
+    <div className="analysis-block">
+      <h4>Vs konkurencja (TOP Google) — realne sprawdzenie</h4>
+      {!data && <button className="btn ghost tiny" onClick={run} disabled={loading}>{loading ? 'Analizuję TOP Google…' : 'Porównaj z TOP wynikami Google'}</button>}
+      {err && <p className="kw-error">{err}</p>}
+      {data && data.scoring && (
+        <>
+          <p style={{ fontSize: 13 }}>Wynik vs TOP: <b className={`compl ${data.scoring.score >= 65 ? 'great' : data.scoring.score >= 50 ? 'ok' : 'bad'}`}>{data.scoring.grade} ({data.scoring.score}%)</b> · pokrycie terminów {data.scoring.coverage.terms}% · {data.scoring.wordCount}/{data.scoring.targetWords} słów</p>
+          {data.scoring.missingTerms.length > 0 && <div className="term-chips">{data.scoring.missingTerms.slice(0, 20).map((t, i) => <span key={i} className="term-chip bad">{t}</span>)}</div>}
+        </>
+      )}
+      {data && !data.scoring && <p className="muted">Zbudowano wzorzec, ale nie udało się pobrać treści tej strony.</p>}
     </div>
   );
 }

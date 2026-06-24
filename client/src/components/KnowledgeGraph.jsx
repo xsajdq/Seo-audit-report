@@ -25,6 +25,7 @@ export default function KnowledgeGraph({ resultId }) {
         Mapa pokrycia tematycznego witryny: węzły to tematy (klastry treści), połączenia to linkowanie wewnętrzne.
         Czerwona przerywana obwódka oznacza temat z luką pokrycia (płytki / bez strony filarowej / słaby interlinking).
       </p>
+      <p className="note">„Spójność z klastrem" pokazuje tylko zgodność strony z innymi Twoimi stronami w temacie (sygnał wewnętrzny). Realne, niecyrkularne sprawdzenie pełności treści względem TOP Google znajdziesz w zakładce <b>Narzędzia treści → Vs konkurencja (SERP)</b>.</p>
 
       <div className="kw-summary">
         <Stat n={data.stats.topics} label="Tematów" />
@@ -66,7 +67,7 @@ export default function KnowledgeGraph({ resultId }) {
                 <a href={p.url} target="_blank" rel="noreferrer">{p.title}</a>
                 <span className="muted"> · {p.words} słów</span>
                 {p.completeness != null && (
-                  <span className={`compl ${complCls(p.completeness)}`}> · kompletność {p.completeness}%</span>
+                  <span className={`compl ${complCls(p.completeness)}`}> · spójność z klastrem {p.completeness}%</span>
                 )}
                 <button className="btn ghost tiny" style={{ marginLeft: 8 }} onClick={() => setAnalyzeUrl(p.url)}>Analizuj treść</button>
                 {p.missing?.length > 0 && (
@@ -158,7 +159,7 @@ function AllContentList({ topics, resultId, onAnalyze }) {
       </div>
       <div className="table-wrap">
         <table className="pages-table">
-          <thead><tr><th>Typ</th><th>Tytuł</th><th>Temat</th><th>Słów</th><th>Kompletność</th><th></th></tr></thead>
+          <thead><tr><th>Typ</th><th>Tytuł</th><th>Temat</th><th>Słów</th><th>Spójność (klaster)</th><th></th></tr></thead>
           <tbody>
             {list.map((p, i) => (
               <tr key={i}>

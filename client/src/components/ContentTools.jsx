@@ -1,19 +1,97 @@
 import React, { useState } from 'react';
-import { generateContentPlan, downloadContentPlanXlsx, generateBrief, scoreDraft, expandKeyword } from '../lib/api.js';
+import { generateContentPlan, downloadContentPlanXlsx, generateBrief, scoreDraft, expandKeyword, competitorAnalysis } from '../lib/api.js';
 
 export default function ContentTools({ resultId }) {
-  const [tab, setTab] = useState('plan');
+  const [tab, setTab] = useState('serp');
   return (
     <div className="card">
       <div className="subtabs">
-        {[['plan', '📅 Plan treści'], ['brief', '📝 Brief'], ['editor', '✍️ Edytor treści'], ['expand', '🔍 Rozszerzanie fraz']].map(([k, l]) => (
+        {[['serp', '🥊 Vs konkurencja (SERP)'], ['plan', '📅 Plan treści'], ['brief', '📝 Brief'], ['editor', '✍️ Edytor treści'], ['expand', '🔍 Rozszerzanie fraz']].map(([k, l]) => (
           <button key={k} className={tab === k ? 'active' : ''} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
+      {tab === 'serp' && <CompetitorPanel resultId={resultId} />}
       {tab === 'plan' && <PlanPanel resultId={resultId} />}
       {tab === 'brief' && <BriefPanel resultId={resultId} />}
       {tab === 'editor' && <EditorPanel resultId={resultId} />}
       {tab === 'expand' && <ExpandPanel />}
+    </div>
+  );
+}
+
+export function useSerperKey() {
+  const [key, setKey] = useState(() => localStorage.getItem('serperKey') || '');
+  const save = (v) => { setKey(v); localStorage.setItem('serperKey', v); };
+  return [key, save];
+}
+
+function SerperKeyField() {
+  const [key, save] = useSerperKey();
+  return (
+    <label className="field serper-key">
+      <span>Klucz API Serper.dev <a href="https://serper.dev" target="_blank" rel="noreferrer">(darmowy, 2500 zapytań →)</a></span>
+      <input type="password" value={key} onChange={(e) => save(e.target.value)} placeholder="wklej klucz API (zapisywany lokalnie w przeglądarce)" />
+    </label>
+  );
+}
+
+function CompetitorPanel({ resultId }) {
+  const [keyword, setKeyword] = useState('');
+  const [url, setUrl] = useState('');
+  const [text, setText] = useState('');
+  const [num, setNum] = useState(10);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  async function run() {
+    setLoading(true); setErr(null); setData(null);
+    try {
+      const apiKey = localStorage.getItem('serperKey') || '';
+      const r = await competitorAnalysis(resultId, { keyword: keyword.trim(), url: url.trim(), text: text.trim(), apiKey, num });
+      setData(r);
+    } catch (e) { setErr(e.message); } finally { setLoading(false); }
+  }
+
+  return (
+    <div>
+      <h3>Analiza treści vs konkurencja (TOP Google)</h3>
+      <p className="muted">Pobiera TOP{num} wyników Google dla frazy, analizuje ich treść (TF-IDF) i pokazuje, jakich terminów/encji/pytań używają najlepsi, a brakuje u Ciebie. To realne, niecyrkularne sprawdzenie pełności treści.</p>
+      <SerperKeyField />
+      <div className="kw-inputs">
+        <label className="field"><span>Fraza docelowa</span><input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="np. kredyt hipoteczny" /></label>
+        <label className="field"><span>Twoja strona (adres) lub zostaw puste i wklej treść niżej</span><input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://twojastrona.pl/wpis" /></label>
+      </div>
+      <textarea className="kw-textarea" rows={5} value={text} onChange={(e) => setText(e.target.value)} placeholder="…albo wklej tutaj treść do oceny (zamiast adresu)" />
+      <label className="field inline"><span>Liczba konkurentów: {num}</span><input type="range" min="3" max="15" value={num} onChange={(e) => setNum(+e.target.value)} /></label>
+      <button className="btn primary" onClick={run} disabled={loading || !keyword.trim()}>{loading ? 'Analizuję TOP Google…' : 'Analizuj vs konkurencja →'}</button>
+      {err && <p className="kw-error">{err}</p>}
+
+      {data && (
+        <div className="kw-results">
+          {data.scoring && (
+            <div className="editor-score">
+              <div className={`grade-badge g-${data.scoring.grade}`}>{data.scoring.grade}</div>
+              <div className="kw-summary" style={{ margin: 0 }}>
+                <S n={`${data.scoring.score}%`} l="Wynik vs TOP" />
+                <S n={`${data.scoring.coverage.terms}%`} l="Pokrycie terminów" />
+                <S n={`${data.scoring.wordCount}/${data.scoring.targetWords}`} l="Słów / mediana TOP" />
+              </div>
+            </div>
+          )}
+          <p className="muted" style={{ fontSize: 13 }}>Źródło: {data.profile.source} · konkurentów: {data.profile.competitors.length} · docelowo ~{data.profile.targetWords} słów</p>
+
+          {data.scoring && data.scoring.missingTerms.length > 0 && (<><h4>Brakujące terminy (używają ich TOP wyniki) ({data.scoring.missingTerms.length})</h4><div className="term-chips">{data.scoring.missingTerms.map((t, i) => <span key={i} className="term-chip bad">{t}</span>)}</div></>)}
+          {data.scoring && data.scoring.missingQuestions.length > 0 && (<><h4>Pytania do poruszenia</h4><ul className="q-list">{data.scoring.missingQuestions.map((q, i) => <li key={i}>{q}</li>)}</ul></>)}
+
+          <h4>Wzorzec z TOP wyników — terminy</h4>
+          <div className="term-chips">{data.profile.referenceTerms.map((t, i) => <span key={i} className="term-chip">{t}</span>)}</div>
+          {data.profile.questions.length > 0 && (<><h4>Pytania konkurencji / PAA</h4><ul className="q-list">{data.profile.questions.map((q, i) => <li key={i}>{q}</li>)}</ul></>)}
+          {data.profile.headingSuggestions.length > 0 && (<><h4>Nagłówki u konkurencji</h4><ul className="q-list">{data.profile.headingSuggestions.map((h, i) => <li key={i}>{h}</li>)}</ul></>)}
+          <h4>Analizowani konkurenci</h4>
+          <ul className="issue-pages">{data.profile.competitors.map((c, i) => <li key={i}><a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a> <span className="muted">({c.words} słów)</span></li>)}</ul>
+        </div>
+      )}
     </div>
   );
 }

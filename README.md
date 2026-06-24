@@ -49,6 +49,10 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - **lista wszystkich wpisów i usług** w grafie wiedzy — filtr po typie, sortowanie wg kompletności, podgląd/analiza każdej strony
   - **głęboka analiza pojedynczej strony (wpis/usługa)** — wybierasz stronę, aplikacja pobiera jej treść i pokazuje brakujące **encje, frazy, podtematy i pytania** + rekomendacje; opcjonalne wzbogacenie darmowym API **Wikipedia PL + ConceptNet** (bez klucza, z lokalnym fallbackiem)
   - **checklista treści .xlsx** — lista wpisów/usług z kompletnością, brakującymi podtematami (odpowiedziami) i pytaniami do dodania, z kolumną statusu
+- **Analiza treści vs konkurencja (TOP Google, realna)**:
+  - pobiera TOP10 wyników Google dla frazy przez **Serper.dev** (darmowe 2500 zapytań, bez karty) lub z ręcznie podanych adresów
+  - buduje wzorzec **TF-IDF** z treści konkurentów i wskazuje terminy/encje/pytania, których używają najlepsi, a brakuje u Ciebie (niecyrkularnie — nie z własnych stron)
+  - ocena A–F treści/strony/draftu vs mediana TOP wyników, brakujące terminy i pytania, nagłówki konkurencji
 - **Narzędzia treści (all-in-one)**:
   - **Plan treści / kalendarz redakcyjny** — z fraz + luk z grafu + niekompletnych wpisów buduje priorytetyzowaną listę treści rozłożoną na miesiące (eksport XLSX)
   - **Generator briefów** — outline (H2/H3), pytania, terminy/encje, docelowa długość, title/meta, linki wewnętrzne (opcjonalnie z Google Suggest + Wikipedia/ConceptNet)

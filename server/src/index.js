@@ -15,6 +15,7 @@ import { generateBrief } from './content/contentBrief.js';
 import { scoreDraft } from './content/contentScore.js';
 import { analyzeLinkOpportunities } from './content/internalLinks.js';
 import { expandKeyword } from './content/keywordExpansion.js';
+import { buildCompetitorProfile, scoreAgainstProfile, fetchPageText } from './content/competitorProfile.js';
 import { buildContentPlanXlsx } from './report/exporter.js';
 import { saveAudit, listHistory, getAudit, deleteAudit, compareAudits } from './store/history.js';
 
@@ -231,6 +232,53 @@ app.post('/api/result/:id/link-suggestions', (req, res) => {
     res.json(out);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// --- Realna analiza treści vs konkurencja (TOP SERP / ręczne adresy) ---
+app.post('/api/result/:id/competitor-analysis', async (req, res) => {
+  const r = lastResults.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku audytu.' });
+  let { keyword, url, text, apiKey, num = 10, competitorUrls } = req.body || {};
+
+  // Wyznacz frazę z tematu strony, gdy nie podano
+  if (!keyword && url) {
+    try {
+      const kg = buildKnowledgeGraph(r.pages, { label: 'site' });
+      const norm = (u) => { try { const x = new URL(u); x.hash = ''; let s = x.href; if (s.endsWith('/') && x.pathname !== '/') s = s.slice(0, -1); return s.toLowerCase(); } catch { return String(u).toLowerCase(); } };
+      const t = norm(url);
+      const topic = kg.topics.find((x) => x.pages.some((p) => norm(p.url) === t));
+      const page = r.pages.find((p) => norm(p.url) === t);
+      keyword = topic?.label || (page?.seo?.h1?.[0]) || page?.seo?.title || '';
+    } catch { /* noop */ }
+  }
+  if (!keyword) return res.status(400).json({ error: 'Podaj frazę docelową (lub adres strony przypisanej do tematu).' });
+
+  try {
+    const profile = await buildCompetitorProfile(keyword, { apiKey, num: Math.min(Number(num) || 10, 15), competitorUrls: Array.isArray(competitorUrls) && competitorUrls.length ? competitorUrls : null });
+    if (!profile.available) return res.status(422).json({ error: profile.error || 'Nie udało się zbudować wzorca konkurencji.', keyword });
+
+    // Treść celu
+    let targetText = text || '';
+    let targetMeta = null;
+    if (!targetText && url) {
+      const page = await fetchPageText(url);
+      if (!page) return res.status(422).json({ error: 'Nie udało się pobrać treści analizowanej strony.', profile: summarizeProfile(profile) });
+      targetText = `${page.title} ${page.h1.join(' ')} ${page.headings.join(' ')} ${page.bodyText}`;
+      targetMeta = { url: page.url, title: page.title, words: page.wordCount };
+    }
+    const scoring = targetText ? scoreAgainstProfile(targetText, profile) : null;
+    res.json({ keyword, profile: summarizeProfile(profile), target: targetMeta, scoring });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+function summarizeProfile(p) {
+  return {
+    source: p.source, competitors: p.competitors, targetWords: p.targetWords,
+    referenceTerms: p.referenceTerms, headingSuggestions: p.headingSuggestions,
+    questions: p.questions, entities: p.entities, related: p.related,
+  };
+}
 
 // --- Etap E: Rozszerzanie fraz (Google Suggest) ---
 app.post('/api/keywords/expand', async (req, res) => {
