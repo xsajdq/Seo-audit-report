@@ -123,6 +123,10 @@ client/   React + Vite
 ## Konfiguracja
 
 - Port serwera: zmienna `PORT` (domyślnie `4317`).
+- **Klucz Serper.dev** (analiza vs konkurencja, TOP10 Google) — dwie opcje:
+  1. **Plik `.env`** (zalecane): `cp .env.example .env` i wpisz `SERPER_API_KEY=twój_klucz`. Plik `.env` jest ignorowany przez git — klucz nie trafi do repozytorium. Serwer wczyta go automatycznie (`npm start`).
+  2. **W aplikacji**: pole „Klucz API Serper.dev" w zakładce *Narzędzia treści → Vs konkurencja (SERP)* — zapisywany lokalnie w przeglądarce.
+  - Darmowy klucz (2500 zapytań, bez karty): https://serper.dev
 
 ## Roadmapa
 

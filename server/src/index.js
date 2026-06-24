@@ -32,7 +32,7 @@ const controllers = new Map(); // id -> CrawlController
 // --- Status środowiska ---
 app.get('/api/health', async (req, res) => {
   const renderAvailable = await isRenderAvailable();
-  res.json({ ok: true, renderAvailable, version: '1.0.0' });
+  res.json({ ok: true, renderAvailable, serperConfigured: !!process.env.SERPER_API_KEY, version: '1.0.0' });
 });
 
 // --- Uruchom audyt ze strumieniem postępu (SSE) ---
