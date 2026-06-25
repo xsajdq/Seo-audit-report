@@ -53,6 +53,7 @@ Lokalne, potężne narzędzie do **technicznego audytu SEO**. Działa w przeglą
   - pobiera TOP10 wyników Google dla frazy przez **Serper.dev** (darmowe 2500 zapytań, bez karty) lub z ręcznie podanych adresów
   - buduje wzorzec **TF-IDF** z treści konkurentów i wskazuje terminy/encje/pytania, których używają najlepsi, a brakuje u Ciebie (niecyrkularnie — nie z własnych stron)
   - ocena A–F treści/strony/draftu vs mediana TOP wyników, brakujące terminy i pytania, nagłówki konkurencji
+  - **Batch vs konkurencja** — jednym kliknięciem ocenia całą witrynę: wykrywa tematy, pobiera TOP Google dla każdego i tworzy **ranking najsłabszych wpisów** względem konkurencji (z brakującymi terminami i pytaniami per strona). Zużycie ≈ 1 zapytanie Serper na temat.
 - **Narzędzia treści (all-in-one)**:
   - **Plan treści / kalendarz redakcyjny** — z fraz + luk z grafu + niekompletnych wpisów buduje priorytetyzowaną listę treści rozłożoną na miesiące (eksport XLSX)
   - **Generator briefów** — outline (H2/H3), pytania, terminy/encje, docelowa długość, title/meta, linki wewnętrzne (opcjonalnie z Google Suggest + Wikipedia/ConceptNet)

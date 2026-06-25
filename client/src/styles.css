@@ -346,6 +346,17 @@ code { background: #f1f5f9; padding: 1px 6px; border-radius: 5px; font-size: 0.9
 .editor-score { display: flex; align-items: center; gap: 18px; margin: 12px 0; }
 .grade-badge { width: 64px; height: 64px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 800; color: #fff; flex-shrink: 0; }
 .grade-badge.g-A { background: #16a34a; } .grade-badge.g-B { background: #65a30d; } .grade-badge.g-C { background: #d97706; } .grade-badge.g-D { background: #ea580c; } .grade-badge.g-F { background: #dc2626; }
+.grade-badge.sm { width: 30px; height: 30px; border-radius: 8px; font-size: 16px; }
+
+/* Batch vs konkurencja */
+.batch-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+.batch-table th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.batch-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.batch-row { cursor: pointer; }
+.batch-row:hover { background: #f8fafc; }
+.batch-title { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.batch-warn { color: #b45309; font-weight: 600; }
+.batch-detail td { background: #f8fafc; }
 
 /* History */
 .history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }

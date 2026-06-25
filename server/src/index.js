@@ -16,6 +16,7 @@ import { scoreDraft } from './content/contentScore.js';
 import { analyzeLinkOpportunities } from './content/internalLinks.js';
 import { expandKeyword } from './content/keywordExpansion.js';
 import { buildCompetitorProfile, scoreAgainstProfile, fetchPageText } from './content/competitorProfile.js';
+import { runCompetitorBatch } from './content/competitorBatch.js';
 import { buildContentPlanXlsx } from './report/exporter.js';
 import { saveAudit, listHistory, getAudit, deleteAudit, compareAudits } from './store/history.js';
 
@@ -267,6 +268,29 @@ app.post('/api/result/:id/competitor-analysis', async (req, res) => {
     }
     const scoring = targetText ? scoreAgainstProfile(targetText, profile) : null;
     res.json({ keyword, profile: summarizeProfile(profile), target: targetMeta, scoring });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Batch „vs konkurencja" — ranking wszystkich tematów/wpisów względem TOP Google.
+app.post('/api/result/:id/competitor-batch', async (req, res) => {
+  const r = lastResults.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Nie znaleziono wyniku audytu.' });
+  const { apiKey, num = 10, maxTopics = 10 } = req.body || {};
+  try {
+    const out = await runCompetitorBatch(r.pages, {
+      apiKey,
+      num: Math.min(Number(num) || 10, 15),
+      maxTopics: Math.min(Math.max(Number(maxTopics) || 10, 1), 20),
+    });
+    if (out.topicsAnalyzed === 0) {
+      return res.status(422).json({
+        error: out.skipped[0]?.reason || 'Nie udało się przeanalizować żadnego tematu. Sprawdź klucz API Serper lub czy witryna ma wystarczająco treści.',
+        ...out,
+      });
+    }
+    res.json(out);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

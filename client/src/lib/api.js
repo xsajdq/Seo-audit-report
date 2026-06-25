@@ -96,6 +96,7 @@ export const scoreDraft = (id, body) => postJson(`/api/result/${id}/score-draft`
 export const linkSuggestions = (id, url) => postJson(`/api/result/${id}/link-suggestions`, { url });
 export const expandKeyword = (seed, deep = true) => postJson('/api/keywords/expand', { seed, deep });
 export const competitorAnalysis = (id, body) => postJson(`/api/result/${id}/competitor-analysis`, body);
+export const competitorBatch = (id, body) => postJson(`/api/result/${id}/competitor-batch`, body);
 
 export async function downloadContentPlanXlsx(id, body) {
   const r = await fetch(`/api/result/${id}/content-plan?format=xlsx`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

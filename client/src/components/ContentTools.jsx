@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { generateContentPlan, downloadContentPlanXlsx, generateBrief, scoreDraft, expandKeyword, competitorAnalysis } from '../lib/api.js';
+import { generateContentPlan, downloadContentPlanXlsx, generateBrief, scoreDraft, expandKeyword, competitorAnalysis, competitorBatch } from '../lib/api.js';
 
 export default function ContentTools({ resultId }) {
   const [tab, setTab] = useState('serp');
   return (
     <div className="card">
       <div className="subtabs">
-        {[['serp', '🥊 Vs konkurencja (SERP)'], ['plan', '📅 Plan treści'], ['brief', '📝 Brief'], ['editor', '✍️ Edytor treści'], ['expand', '🔍 Rozszerzanie fraz']].map(([k, l]) => (
+        {[['serp', '🥊 Vs konkurencja (SERP)'], ['batch', '📊 Batch vs konkurencja'], ['plan', '📅 Plan treści'], ['brief', '📝 Brief'], ['editor', '✍️ Edytor treści'], ['expand', '🔍 Rozszerzanie fraz']].map(([k, l]) => (
           <button key={k} className={tab === k ? 'active' : ''} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
       {tab === 'serp' && <CompetitorPanel resultId={resultId} />}
+      {tab === 'batch' && <BatchCompetitorPanel resultId={resultId} />}
       {tab === 'plan' && <PlanPanel resultId={resultId} />}
       {tab === 'brief' && <BriefPanel resultId={resultId} />}
       {tab === 'editor' && <EditorPanel resultId={resultId} />}
@@ -90,6 +91,89 @@ function CompetitorPanel({ resultId }) {
           {data.profile.headingSuggestions.length > 0 && (<><h4>Nagłówki u konkurencji</h4><ul className="q-list">{data.profile.headingSuggestions.map((h, i) => <li key={i}>{h}</li>)}</ul></>)}
           <h4>Analizowani konkurenci</h4>
           <ul className="issue-pages">{data.profile.competitors.map((c, i) => <li key={i}><a href={c.url} target="_blank" rel="noreferrer">{c.title || c.url}</a> <span className="muted">({c.words} słów)</span></li>)}</ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function gradeOf(score) { return score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 65 ? 'C' : score >= 50 ? 'D' : 'F'; }
+
+function BatchCompetitorPanel({ resultId }) {
+  const [maxTopics, setMaxTopics] = useState(8);
+  const [num, setNum] = useState(10);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+
+  async function run() {
+    setLoading(true); setErr(null); setData(null); setExpanded(null);
+    try {
+      const apiKey = localStorage.getItem('serperKey') || '';
+      const r = await competitorBatch(resultId, { apiKey, num, maxTopics });
+      setData(r);
+    } catch (e) { setErr(e.message); } finally { setLoading(false); }
+  }
+
+  return (
+    <div>
+      <h3>Batch vs konkurencja — ranking całej witryny względem TOP Google</h3>
+      <p className="muted">Automatycznie wykrywa tematy witryny, pobiera TOP Google dla każdego (fraza = etykieta tematu) i ocenia wszystkie wpisy względem wzorca konkurencji. Pokazuje, które strony są najsłabsze i czego im brakuje. Zużycie Serper = liczba tematów (~1 zapytanie/temat).</p>
+      <SerperKeyField />
+      <div className="kw-inputs">
+        <label className="field inline"><span>Maks. tematów: {maxTopics}</span><input type="range" min="1" max="20" value={maxTopics} onChange={(e) => setMaxTopics(+e.target.value)} /></label>
+        <label className="field inline"><span>Konkurentów/temat: {num}</span><input type="range" min="3" max="15" value={num} onChange={(e) => setNum(+e.target.value)} /></label>
+      </div>
+      <p className="muted" style={{ fontSize: 12 }}>≈ {maxTopics} zapytań Serper na przebieg (z darmowych 2500). Większe witryny analizuj partiami.</p>
+      <button className="btn primary" onClick={run} disabled={loading}>{loading ? 'Analizuję tematy vs TOP Google… (to może potrwać ~1 min)' : 'Uruchom batch vs konkurencja →'}</button>
+      {err && <p className="kw-error">{err}</p>}
+
+      {data && (
+        <div className="kw-results">
+          <div className="kw-summary">
+            <S n={data.topicsAnalyzed} l="Tematów ocenionych" />
+            <S n={data.rows.length} l="Stron ocenionych" />
+            <S n={`${data.queriesUsed}`} l="Zapytań Serper" />
+            {data.avgScore != null && <S n={`${data.avgScore}%`} l="Średni wynik vs TOP" />}
+          </div>
+
+          {data.rows.length > 0 && (
+            <>
+              <h4>Ranking — najsłabsze najpierw</h4>
+              <table className="batch-table">
+                <thead><tr><th></th><th>Strona</th><th>Temat (fraza)</th><th>Wynik</th><th>Słów / TOP</th><th>Braki</th></tr></thead>
+                <tbody>
+                  {data.rows.map((r, i) => (
+                    <React.Fragment key={i}>
+                      <tr className="batch-row" onClick={() => setExpanded(expanded === i ? null : i)}>
+                        <td><span className={`grade-badge sm g-${r.grade || gradeOf(r.score)}`}>{r.grade || gradeOf(r.score)}</span></td>
+                        <td className="batch-title"><a href={r.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{r.title}</a></td>
+                        <td className="muted">{r.keyword}</td>
+                        <td><b>{r.score}%</b> <span className="muted">({r.termCoverage}% term.)</span></td>
+                        <td className={r.wordCount < r.targetWords * 0.8 ? 'batch-warn' : ''}>{r.wordCount}/{r.targetWords}</td>
+                        <td>{r.missingCount} terminów {(r.missingTerms.length || r.missingQuestions.length) ? <span className="muted">{expanded === i ? '▲' : '▼'}</span> : null}</td>
+                      </tr>
+                      {expanded === i && (
+                        <tr className="batch-detail"><td colSpan={6}>
+                          {r.missingTerms.length > 0 && (<><div className="muted">Brakujące terminy (używają ich TOP):</div><div className="term-chips">{r.missingTerms.map((t, j) => <span key={j} className="term-chip bad">{t}</span>)}</div></>)}
+                          {r.missingQuestions.length > 0 && (<><div className="muted" style={{ marginTop: 6 }}>Pytania do poruszenia:</div><ul className="q-list">{r.missingQuestions.map((q, j) => <li key={j}>{q}</li>)}</ul></>)}
+                          {!r.missingTerms.length && !r.missingQuestions.length && <span className="muted">Brak istotnych braków — treść dobrze pokrywa wzorzec.</span>}
+                        </td></tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+
+          {data.failed?.length > 0 && (<p className="muted" style={{ fontSize: 12 }}>Nie udało się pobrać treści: {data.failed.length} stron(y).</p>)}
+          {data.skipped?.length > 0 && (
+            <details><summary className="muted">Pominięte tematy ({data.skipped.length})</summary>
+              <ul className="issue-pages">{data.skipped.map((s, i) => <li key={i}><b>{s.keyword}</b> <span className="muted">— {s.reason}</span></li>)}</ul>
+            </details>
+          )}
         </div>
       )}
     </div>
